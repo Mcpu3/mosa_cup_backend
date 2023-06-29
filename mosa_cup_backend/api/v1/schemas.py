@@ -30,3 +30,16 @@ class DisplayName(BaseModel):
 
 class LineId(BaseModel):
     new_line_id: str
+
+
+class Board(BaseModel):
+    board_uuid: str
+    board_id: str
+    board_name: Optional[str]
+    members:Optional[list[User]]
+
+class Subboard(BaseModel):
+    subboard_uuid: str
+    subboard_name: str
+    members: list[str]
+

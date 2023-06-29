@@ -23,3 +23,22 @@ def create_user(database: Session, signup: schemas.Signup) -> models.User:
     database.refresh(user)
 
     return user
+
+def read_boards(database: Session, username: str) -> list[models.Board]:
+    return database.query(models.Board).filter(models.Board.administrater == username).all()
+
+def read_board(database: Session, board_uuid: str) -> models.Board:
+    return database.query(models.Board).filter(models.Board.board_uuid == board_uuid).first()
+
+def create_board(database: Session, new_board: schemas.Board) -> models.Board:
+    created_at= datetime.now()
+    board = models.Board(
+        board_id = new_board.board_id,
+        board_name = new_board.board_name,
+        created_at = created_at
+    )
+    database.add(board)
+    database.commit()
+    database.refresh(board)
+
+    return board

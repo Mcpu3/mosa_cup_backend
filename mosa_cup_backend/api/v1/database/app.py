@@ -25,3 +25,26 @@ class User(database.Model):
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
+
+class Board(database.Model):
+    __tablename__ = "Boards"
+
+    board_uuid = database.Column(database.String(48),primary_key=True)
+    board_id = database.Column(database.String,nullable=False)
+    board_name = database.Column(database.String,nullable=False)
+    administrater = database.Column(database.String,nullable=False)
+    members = database.Column(database.String,nullable=False)
+    created_at = database.Column(database.DateTime,nullable=False)
+    updated_at = database.Column(database.DateTime,nullable=True)
+    deleted = database.Column(database.Boolean,default=False,nullable=False)
+
+class Subboard(database.Model):
+    __tablename__ = "Subboards"
+
+    subboard_uuid = database.Column(database.String(48),primary_key=True)
+    board_uuid = database.Column(database.String,nullable=False)
+    subboard_name = database.Column(database.String,nullable=False)
+    members = database.Column(database.String,nullable=False)
+    created_at = database.Column(database.DateTime,nullable=False)
+    updated_at = database.Column(database.DateTime,nullable=True)
+    deleted_at = database.Column(database.Boolean,default=False,nullable=False)

@@ -13,3 +13,26 @@ class User(Base):
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
+
+class Board(Base):
+    __tablename__ = "Boards"
+
+    board_uuid = Column(String(48),primary_key=True)
+    board_id = Column(String,nullable=False)
+    board_name = Column(String,nullable=False)
+    administrater = Column(String,nullable=False)
+    members = Column(String,nullable=False)
+    created_at = Column(DateTime,nullable=False)
+    updated_at = Column(DateTime,nullable=True)
+    deleted = Column(Boolean,default=False,nullable=False)
+
+class Subboard(Base):
+    __tablename__ = "Subboards"
+
+    subboard_uuid = Column(String(48),primary_key=True)
+    board_uuid = Column(String,nullable=False)
+    subboard_name = Column(String,nullable=False)
+    members = Column(String,nullable=False)
+    created_at = Column(DateTime,nullable=False)
+    updated_at = Column(DateTime,nullable=True)
+    deleted_at = Column(Boolean,default=False,nullable=False)

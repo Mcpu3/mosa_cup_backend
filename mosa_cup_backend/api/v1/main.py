@@ -69,3 +69,27 @@ def signin(request: OAuth2PasswordRequestForm=Depends(), database: Session=Depen
 @api_router.get("/me", response_model=schemas.User)
 def get_me(current_user: models.User=Depends(get_current_user)) -> schemas.User:
     return current_user
+
+@api_router.get("/boards",response_model=list[schemas.Board])
+def get_boards(current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) -> list[schemas.Board]:
+    boards = crud.read_boards(database,current_user.username)
+    if not boards:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    return boards
+
+@api_router.get("/board/{board_uuid}",response_mode=schemas.Board)
+def get_board(board_uuid: str,current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) -> schemas.Board:
+    board = crud.read_board(database,board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    return board
+
+@api_router.post("/board")
+def create_board(request: schemas.Board,_request:Request,current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) :
+    if (not request.board_id) or (not request.board_name):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    crud.create_board(database,request)
+    response = {
+        "Location": urllib.parse.urljoin(_request.url._url, "./boards")
+    }
+    return JSONResponse(response, status.HTTP_201_CREATED)
