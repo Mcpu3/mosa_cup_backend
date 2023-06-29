@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "SECRET_KEY": "c0f108359e40857c4cf5de31826add1cb9a2a72179a30b83813a99b2feefd715",
+    "DATABASE_PASSWORD": "Ube9cc#US5BJo#Lt"
+  }
+}
