@@ -31,7 +31,7 @@ def read_board(database: Session, board_uuid: str) -> models.Board:
     return database.query(models.Board).filter(models.Board.board_uuid == board_uuid).first()
 
 def create_board(database: Session, new_board: schemas.Board) -> models.Board:
-    created_at= datetime.now()
+    created_at = datetime.now()
     board = models.Board(
         board_id = new_board.board_id,
         board_name = new_board.board_name,
@@ -42,3 +42,21 @@ def create_board(database: Session, new_board: schemas.Board) -> models.Board:
     database.refresh(board)
 
     return board
+
+def read_subboards(database: Session,board_uuid: str) ->list[models.Subboard]:
+    return database.query(models.Subboard).filter(models.Subboard.board_uuid == board_uuid).all()
+
+def read_subboard(database: Session,subboard_uuid: str) -> models.Subboard:
+    return database.query(models.Subboard).filter(models.Subboard.subboard_uuid == subboard_uuid).first()
+
+def create_subboard(database: Session,new_subboard: schemas.Subboard) -> models.Subboard:
+    created_at = datetime.now()
+    subboard = models.Subboard(
+        subboard_name = new_subboard.subboard_name,
+        created_at = created_at
+    )
+    database.add(subboard)
+    database.commit()
+    database.refresh(subboard)
+
+    return subboard

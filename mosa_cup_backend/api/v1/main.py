@@ -77,7 +77,7 @@ def get_boards(current_user: models.User=Depends(get_current_user),database: Ses
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     return boards
 
-@api_router.get("/board/{board_uuid}",response_mode=schemas.Board)
+@api_router.get("/board/{board_uuid}",response_model=schemas.Board)
 def get_board(board_uuid: str,current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) -> schemas.Board:
     board = crud.read_board(database,board_uuid)
     if not board:
@@ -91,5 +91,29 @@ def create_board(request: schemas.Board,_request:Request,current_user: models.Us
     crud.create_board(database,request)
     response = {
         "Location": urllib.parse.urljoin(_request.url._url, "./boards")
+    }
+    return JSONResponse(response, status.HTTP_201_CREATED)
+
+@api_router.get("/board/{board_uuid}/subboards",response_model=list[schemas.Subboard])
+def get_subboards(board_uuid: str,current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) -> list[schemas.Subboard]:
+    subboards = crud.read_subboards(database,board_uuid)
+    if not subboards:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    return subboards
+
+@api_router.get("/board/{board_uuid}/subboards/{subboard_uuid}",response_model = schemas.Subboard)
+def get_subboard(subboard_uuid: str,current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) -> schemas.Subboard:
+    subboard = crud.read_subboards(database,subboard_uuid)
+    if not subboard:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    return subboard
+
+@api_router.post("/board/{board_uuid}/subboard")
+def create_board(request: schemas.Subboard,_request:Request,current_user: models.User=Depends(get_current_user),database: Session=Depends(get_database)) :
+    if not request.subboard_name:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    crud.create_subboard(database,request)
+    response = {
+        "Location": urllib.parse.urljoin(_request.url._url, "./subboards")
     }
     return JSONResponse(response, status.HTTP_201_CREATED)

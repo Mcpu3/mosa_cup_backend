@@ -41,5 +41,5 @@ class Board(BaseModel):
 class Subboard(BaseModel):
     subboard_uuid: str
     subboard_name: str
-    members: list[str]
+    members: Optional[list[str]]
 
