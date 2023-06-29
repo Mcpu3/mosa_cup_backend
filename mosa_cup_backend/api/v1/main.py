@@ -69,3 +69,27 @@ def signin(request: OAuth2PasswordRequestForm=Depends(), database: Session=Depen
 @api_router.get("/me", response_model=schemas.User)
 def get_me(current_user: models.User=Depends(get_current_user)) -> schemas.User:
     return current_user
+
+@api_router.post("/me/update_password")
+def update_password(request: schemas.Password, current_user: models.User=Depends(get_current_user), database: Session=Depends(get_database)) -> int:
+    user = crud.update_password(database, current_user.username, request)
+    if not user:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_201_CREATED
+
+@api_router.post("/me/update_display_name")
+def update_display_name(request: schemas.DisplayName, current_user: models.User=Depends(get_current_user), database: Session=Depends(get_database)) -> int:
+    user = crud.update_display_name(database, current_user.username, request)
+    if not user:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_201_CREATED
+
+@api_router.post("/me/update_line_id")
+def update_line_id(request: schemas.LineId, current_user: models.User=Depends(get_current_user), database: Session=Depends(get_database)) -> int:
+    user = crud.update_line_id(database, current_user.username, request)
+    if not user:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_201_CREATED
