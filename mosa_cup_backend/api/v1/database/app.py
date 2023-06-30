@@ -25,3 +25,17 @@ class User(database.Model):
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
+
+
+class Message(database.Model):
+    __tablename__ = "Messages"
+
+    message_uuid = database.Column(database.String(48), primary_key=True)
+    board_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), nullable=True)
+    subboard_uuids = database.Column(database.String, nullable=True)
+    body = database.Column(database.String, nullable=False)
+    send_time = database.Column(database.DateTime, nullable=True)
+    scheduled_send_time = database.Column(database.DateTime, nullable=True)
+    created_at = database.Column(database.DateTime, nullable=False)
+    updated_at = database.Column(database.DateTime, nullable=True)
+    deleted = database.Column(database.DateTime, default=False, nullable=False)

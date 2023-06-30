@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -93,3 +94,7 @@ def update_line_id(request: schemas.LineId, current_user: models.User=Depends(ge
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
     
     return status.HTTP_201_CREATED
+
+@api_router.get("/api/v1/messages")
+def get_messages(current_user: models.User=Depends(get_current_user), database: Session=Depends(get_database)) -> List[schemas.Message]:
+    pass

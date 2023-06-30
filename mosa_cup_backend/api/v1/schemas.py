@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
@@ -30,3 +31,15 @@ class DisplayName(BaseModel):
 
 class LineId(BaseModel):
     new_line_id: str
+
+
+class Message(BaseModel):
+    message_uuid: str
+    board: Optional[Board]
+    subboards: Optional[Subboard]
+    body: str
+    send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
+    created_at: datetime
+    updated_at: Optional[datetime]
+    deleted: bool
