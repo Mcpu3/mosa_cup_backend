@@ -175,6 +175,9 @@ def delete_subboard(database: Session, board_uuid: str, subboard_uuid: str) -> O
 
     return subboard
 
+def read_my_boards(database: Session, user_uuid: str, board_uuid: str) -> List[models.Subboard]:
+    return database.query(models.Subboard).filter(and_(models.Subboard.board_uuid == board_uuid, models.Subboard.members.any(user_uuid=user_uuid), models.Subboard.deleted == False)).all()
+
 def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_my_subboards: schemas.NewMySubboards) -> Optional[schemas.User]:
     user = read_user(database, user_uuid=user_uuid)
     if user:

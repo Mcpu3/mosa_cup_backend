@@ -191,7 +191,7 @@ def delete_board(board_uuid: str, subboard_uuid: str, current_user: models.User=
 
 @api_router.get("/board/{board_uuid}/my_subboards", response_model=List[schemas.MySubboard])
 def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
-    subboards = crud.read_subboards(database, board_uuid)
+    subboards = crud.read_my_subboards(database, current_user.user_uuid, board_uuid)
     if not subboards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
