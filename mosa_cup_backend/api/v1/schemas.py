@@ -42,11 +42,6 @@ class Board(BaseModel):
         orm_mode = True
 
 
-class NewBoard(BaseModel):
-    board_id: str
-    board_name: str
-
-
 class Subboard(BaseModel):
     subboard_uuid: str
     subboard_name: str
@@ -54,11 +49,6 @@ class Subboard(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-class NewSubboard(BaseModel):
-    board_uuid: str
-    subboard_name: str
 
 
 class BoardWithSubboards(BaseModel):
@@ -71,11 +61,67 @@ class BoardWithSubboards(BaseModel):
     class Config:
         orm_mode = True
 
+
 class SubboardWithBoard(BaseModel):
     subboard_uuid: str
     subboard_name: str
-    members: List[User]
     board: Board
+    members: List[User]
 
     class Config:
         orm_mode = True
+
+
+class NewBoard(BaseModel):
+    board_id: str
+    board_name: str
+
+
+class NewSubboard(BaseModel):
+    subboard_name: str
+
+
+class MyBoard(BaseModel):
+    board_uuid: str
+    board_id: str
+    board_name: str
+    administrator: User
+
+    class Config:
+        orm_mode = True
+
+
+class MySubboard(BaseModel):
+    subboard_uuid: str
+    subboard_name: str
+
+    class Config:
+        orm_mode = True
+
+
+class MyBoardWithSubboards(BaseModel):
+    board_uuid: str
+    board_id: str
+    board_name: str
+    administrator: User
+    subboards: List[MySubboard]
+
+    class Config:
+        orm_mode = True
+
+
+class MySubboardWithBoard(BaseModel):
+    subboard_uuid: str
+    subboard_name: str
+    board: MyBoard
+
+    class Config:
+        orm_mode = True
+
+
+class NewMyBoards(BaseModel):
+    new_my_board_uuids: List[str]
+
+
+class NewMySubboards(BaseModel):
+    new_my_subboard_uuids: List[str]
