@@ -1,3 +1,4 @@
+import json
 import os
 import urllib.parse
 
@@ -19,32 +20,34 @@ class User(database.Model):
     __tablename__ = "Users"
 
     username = database.Column(database.String(48), primary_key=True)
-    hashed_password = database.Column(database.String, nullable=False)
-    display_name = database.Column(database.String, nullable=True)
-    line_id = database.Column(database.String, nullable=True)
+    hashed_password = database.Column(database.Unicode, nullable=False)
+    display_name = database.Column(database.Unicode, nullable=True)
+    line_id = database.Column(database.Unicode, nullable=True)
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
 
+
 class Board(database.Model):
     __tablename__ = "Boards"
 
-    board_uuid = database.Column(database.String(48),primary_key=True)
-    board_id = database.Column(database.String,nullable=False)
-    board_name = database.Column(database.String,nullable=False)
-    administrater = database.Column(database.String,nullable=False)
-    members = database.Column(database.String,nullable=False)
-    created_at = database.Column(database.DateTime,nullable=False)
-    updated_at = database.Column(database.DateTime,nullable=True)
-    deleted = database.Column(database.Boolean,default=False,nullable=False)
+    board_uuid = database.Column(database.String(48), primary_key=True)
+    administrator = database.Column(database.String(48), database.ForeignKey("Users.username"), nullable=False)
+    board_id = database.Column(database.Unicode, nullable=False)
+    board_name = database.Column(database.Unicode, nullable=False)
+    members = database.Column(database.Unicode, default=json.dumps([]), nullable=False)
+    created_at = database.Column(database.DateTime, nullable=False)
+    updated_at = database.Column(database.DateTime, nullable=True)
+    deleted = database.Column(database.Boolean, default=False, nullable=False)
+
 
 class Subboard(database.Model):
     __tablename__ = "Subboards"
 
-    subboard_uuid = database.Column(database.String(48),primary_key=True)
-    board_uuid = database.Column(database.String,nullable=False)
-    subboard_name = database.Column(database.String,nullable=False)
-    members = database.Column(database.String,nullable=False)
-    created_at = database.Column(database.DateTime,nullable=False)
-    updated_at = database.Column(database.DateTime,nullable=True)
-    deleted_at = database.Column(database.Boolean,default=False,nullable=False)
+    subboard_uuid = database.Column(database.String(48), primary_key=True)
+    board_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), nullable=False)
+    subboard_name = database.Column(database.Unicode, nullable=False)
+    members = database.Column(database.Unicode, default=json.dumps([]), nullable=False)
+    created_at = database.Column(database.DateTime, nullable=False)
+    updated_at = database.Column(database.DateTime, nullable=True)
+    deleted = database.Column(database.Boolean, default=False, nullable=False)

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 
 class Token(BaseModel):
@@ -35,11 +35,47 @@ class LineId(BaseModel):
 class Board(BaseModel):
     board_uuid: str
     board_id: str
-    board_name: Optional[str]
-    members:Optional[list[User]]
+    board_name: str
+    members: List[User]
+
+    class Config:
+        orm_mode = True
+
+
+class NewBoard(BaseModel):
+    board_id: str
+    board_name: str
+
 
 class Subboard(BaseModel):
     subboard_uuid: str
     subboard_name: str
-    members: Optional[list[str]]
+    members: List[User]
 
+    class Config:
+        orm_mode = True
+
+
+class NewSubboard(BaseModel):
+    board_uuid: str
+    subboard_name: str
+
+
+class BoardWithSubboards(BaseModel):
+    board_uuid: str
+    board_id: str
+    board_name: str
+    members: List[User]
+    subboards: List[Subboard]
+
+    class Config:
+        orm_mode = True
+
+class SubboardWithBoard(BaseModel):
+    subboard_uuid: str
+    subboard_name: str
+    members: List[User]
+    board: Board
+
+    class Config:
+        orm_mode = True
