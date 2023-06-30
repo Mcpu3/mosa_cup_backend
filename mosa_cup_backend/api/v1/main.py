@@ -138,11 +138,11 @@ def delete_board(board_uuid: str, current_user: models.User=Depends(_get_current
 
 @api_router.get("/my_boards", response_model=List[schemas.MyBoard])
 def get_my_boards(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MyBoard]:
-    boards = crud.read_my_boards(database, current_user.user_uuid)
-    if not boards:
+    my_boards = crud.read_my_boards(database, current_user.user_uuid)
+    if not my_boards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
-    return boards
+    return my_boards
 
 @api_router.post("/update_my_boards")
 def update_my_boards(request: schemas.NewMyBoards, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -191,11 +191,11 @@ def delete_board(board_uuid: str, subboard_uuid: str, current_user: models.User=
 
 @api_router.get("/board/{board_uuid}/my_subboards", response_model=List[schemas.MySubboard])
 def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
-    subboards = crud.read_my_subboards(database, current_user.user_uuid, board_uuid)
-    if not subboards:
+    my_subboards = crud.read_my_subboards(database, current_user.user_uuid, board_uuid)
+    if not my_subboards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
-    return subboards
+    return my_subboards
 
 @api_router.post("/board/{board_uuid}/update_my_subboards")
 def update_my_subboards(board_uuid: str, request: schemas.NewMySubboards, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -205,6 +205,38 @@ def update_my_subboards(board_uuid: str, request: schemas.NewMySubboards, curren
     
     return status.HTTP_201_CREATED
 
-@api_router.get("/api/v1/messages")
-def get_messages(current_user: models.User=Depends(get_current_user), database: Session=Depends(get_database)) -> List[schemas.Message]:
-    pass
+@api_router.get("/api/v1/board/{board_uuid}/messages")
+def get_messages(board_uuid: str, request: schemas.MessageFilter, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
+    messages = crud.read_messages(database, board_uuid, request)
+    if not messages:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    
+    return messages
+
+@api_router.post("/api/v1/board/{board_uuid}/message")
+def post_messages(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    message = crud.create_message(database, board_uuid, request)
+    if not message:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    response = {
+        "Location": urllib.parse.urljoin(_request.url._url, f"./message/{message.message_uuid}")
+    }
+
+    return JSONResponse(response, status.HTTP_201_CREATED)
+
+@api_router.delete("/api/v1/board/{board_uuid}/message/{message_uuid}")
+def delete_messages(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    message = crud.read_message(database, board_uuid, message_uuid)
+    if not message:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_200_OK
+
+@api_router.get("/api/v1/board/{board_uuid}/my_messages")
+def get_my_messages(board_uuid: str, request: schemas.MessageFilter, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    my_messages = crud.read_my_messages(database, current_user.user_uuid, board_uuid, request)
+    if not my_messages:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    
+    return my_messages
+

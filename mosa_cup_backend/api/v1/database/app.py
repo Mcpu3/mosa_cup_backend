@@ -46,6 +46,7 @@ class Board(database.Model):
     deleted = database.Column(database.Boolean, default=False, nullable=False)
 
     subboards = database.relationship("Subboard", back_populates="board")
+    received_messages = database.relationship("Message", back_populates="board")
 
 
 class BoardMember(database.Model):
@@ -66,6 +67,8 @@ class Subboard(database.Model):
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
 
+    received_messages = database.relationship("Message", secondary="SubboardMessages", back_populates="subboards")
+
 
 class SubboardMember(database.Model):
     __tablename__ = "SubboardMembers"
@@ -79,10 +82,18 @@ class Message(database.Model):
 
     message_uuid = database.Column(database.String(48), primary_key=True)
     board_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), nullable=True)
-    subboard_uuids = database.Column(database.String, nullable=True)
+    board = database.relationship("Board", back_populates="received_messages")
+    subboards = database.relationship("Subboard", secondary="SubboardMessages", back_populates="received_messages")
     body = database.Column(database.String, nullable=False)
     send_time = database.Column(database.DateTime, nullable=True)
     scheduled_send_time = database.Column(database.DateTime, nullable=True)
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.DateTime, default=False, nullable=False)
+
+
+class SubboardMessage(database.Model):
+    __tablename__ = "SubboardMessages"
+
+    subboard_uuid = database.Column(database.String(48), database.ForeignKey("Subboards.subboard_uuid"), primary_key=True)
+    message_uuid = database.Column(database.String(48), database.ForeignKey("Messages.message_uuid"), primary_key=True)

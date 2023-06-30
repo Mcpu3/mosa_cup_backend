@@ -131,10 +131,21 @@ class NewMySubboards(BaseModel):
 class Message(BaseModel):
     message_uuid: str
     board: Optional[Board]
-    subboards: Optional[Subboard]
+    subboards: Optional[List[Subboard]]
     body: str
     send_time: Optional[datetime]
     scheduled_send_time: Optional[datetime]
     created_at: datetime
     updated_at: Optional[datetime]
     deleted: bool
+
+
+class NewMessage(BaseModel):
+    subboard_uuids: Optional[List[str]]
+    body: str
+    schduled_send_time: Optional[datetime]
+
+
+class MessageFilter(BaseModel):
+    only_sent: Optional[bool]
+    only_scheduled: Optional[bool]

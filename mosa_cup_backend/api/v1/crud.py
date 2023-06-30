@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from passlib.context import CryptContext
-from sqlalchemy import and_
+from sqlalchemy import and_, any_, or_
 from sqlalchemy.orm import Session
 
 from mosa_cup_backend.api.v1 import models, schemas
@@ -45,7 +45,6 @@ def update_password(database: Session, user_uuid: str, password: schemas.Passwor
     if user:
         hashed_password = CryptContext(["bcrypt"]).hash(password.new_password)
         updated_at = datetime.now()
-
         user.hashed_password = hashed_password
         user.updated_at = updated_at
         database.commit()
@@ -57,7 +56,6 @@ def update_display_name(database: Session, user_uuid: str, display_name: schemas
     user = read_user(database, user_uuid=user_uuid)
     if user:
         updated_at = datetime.now()
-
         user.display_name = display_name.new_display_name
         user.updated_at = updated_at
         database.commit()
@@ -69,7 +67,6 @@ def update_line_id(database: Session, user_uuid: str, line_id: schemas.LineId) -
     user = read_user(database, user_uuid=user_uuid)
     if user:
         updated_at = datetime.now()
-
         user.line_id = line_id.new_line_id
         user.updated_at = updated_at
         database.commit()
@@ -81,7 +78,6 @@ def delete_user(database: Session, user_uuid: str) -> Optional[models.User]:
     user = read_user(database, user_uuid=user_uuid)
     if user:
         updated_at = datetime.now()
-
         user.updated_at = updated_at
         user.deleted = True
         database.commit()
@@ -115,7 +111,6 @@ def delete_board(database: Session, board_uuid: str) -> Optional[models.Board]:
     board = read_board(database, board_uuid)
     if board:
         updated_at = datetime.now()
-        
         board.updated_at = updated_at
         board.deleted = True
         for subboard in board.subboards:
@@ -167,7 +162,6 @@ def delete_subboard(database: Session, board_uuid: str, subboard_uuid: str) -> O
     subboard = read_subboard(database, board_uuid, subboard_uuid)
     if subboard:
         updated_at = datetime.now()
-        
         subboard.updated_at = updated_at
         subboard.deleted = True
         database.commit()
@@ -175,7 +169,7 @@ def delete_subboard(database: Session, board_uuid: str, subboard_uuid: str) -> O
 
     return subboard
 
-def read_my_boards(database: Session, user_uuid: str, board_uuid: str) -> List[models.Subboard]:
+def read_my_subboards(database: Session, user_uuid: str, board_uuid: str) -> List[models.Subboard]:
     return database.query(models.Subboard).filter(and_(models.Subboard.board_uuid == board_uuid, models.Subboard.members.any(user_uuid=user_uuid), models.Subboard.deleted == False)).all()
 
 def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_my_subboards: schemas.NewMySubboards) -> Optional[schemas.User]:
@@ -190,3 +184,59 @@ def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_
         database.refresh(user)
 
     return user
+
+def read_messages(database: Session, board_uuid: str, message_filter: schemas.MessageFilter) -> List[models.Message]:
+    query = database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
+    if message_filter.only_sent:
+        query = query.filter(models.Message.send_time.isnot(None))
+    if message_filter.only_scheduled:
+        query = query.filter(models.Message.scheduled_send_time.isnot(None))
+    messages = query.all()
+
+    return messages
+
+def read_message(database: Session, board_uuid: str, message_uuid: str) -> Optional[models.Message]:
+    return database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
+
+def create_message(database: Session, board_uuid: str, new_message: schemas.NewMessage):
+    message_uuid = str(uuid4())
+    created_at = datetime.now()
+    message = models.Message(
+        message_uuid=message_uuid,
+        board_uuid=board_uuid,
+        body=new_message.body,
+        scheduled_send_time=new_message.scheduled_send_time,
+        created_at=created_at
+    )
+    if new_message.subboard_uuids:
+        for subboard_uuid in new_message.subboard_uuids:
+            subboard = read_subboard(database, board_uuid, subboard_uuid)
+            message.subboards.append(subboard)
+    database.add(message)
+    database.commit()
+    database.refresh(message)
+
+    return message
+
+def delete_message(database: Session, board_uuid: str, message_uuid: str) -> models.Message:
+    message = read_message(database, board_uuid, message_uuid)
+    if message:
+        updated_at = datetime.now()
+        message.updated_at = updated_at
+        message.deleted = True
+        database.commit()
+        database.refresh(message)
+
+    return message
+
+def read_my_messages(database: Session, user_uuid: str, board_uuid: str, message_filter: schemas.MessageFilter) -> List[models.Message]:
+    query = database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
+    my_subboards = read_my_subboards(database, user_uuid, board_uuid)
+    query = query.filter(or_(models.Message.subboards.any(subboard_uuid=any_([my_subboard.subboard_uuid for my_subboard in my_subboards])), models.Message.subboards.is_(None)))
+    if message_filter.only_sent:
+        query = query.filter(models.Message.send_time.isnot(None))
+    if message_filter.only_scheduled:
+        query = query.filter(models.Message.scheduled_send_time.isnot(None))
+    messages = query.all()
+
+    return messages

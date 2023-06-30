@@ -35,6 +35,7 @@ class Board(Base):
     deleted = Column(Boolean, default=False, nullable=False)
 
     subboards = relationship("Subboard", back_populates="board")
+    received_messages = relationship("Message", back_populates="board")
 
 
 class BoardMember(Base):
@@ -56,6 +57,8 @@ class Subboard(Base):
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
 
+    received_messages = relationship("Message", secondary="SubboardMessages", back_populates="subboards")
+
 
 class SubboardMember(Base):
     __tablename__ = "SubboardMembers"
@@ -69,10 +72,18 @@ class Message(Base):
 
     message_uuid = Column(String(48), primary_key=True)
     board_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), nullable=True)
-    subboard_uuids = Column(String, nullable=True)
+    board = relationship("Board", back_populates="received_messages")
+    subboards = relationship("Subboard", secondary="SubboardMessages", back_populates="received_messages")
     body = Column(String, nullable=False)
     send_time = Column(DateTime, nullable=True)
     scheduled_send_time = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(DateTime, default=False, nullable=False)
+
+
+class SubboardMessage(Base):
+    __tablename__ = "SubboardMessages"
+
+    subboard_uuid = Column(String(48), ForeignKey("Subboards.subboard_uuid"), primary_key=True)
+    message_uuid = Column(String(48), ForeignKey("Messages.message_uuid"), primary_key=True)
