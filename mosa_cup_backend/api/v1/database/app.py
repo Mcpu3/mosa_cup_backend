@@ -97,3 +97,19 @@ class SubboardMessage(database.Model):
 
     subboard_uuid = database.Column(database.String(48), database.ForeignKey("Subboards.subboard_uuid"), primary_key=True)
     message_uuid = database.Column(database.String(48), database.ForeignKey("Messages.message_uuid"), primary_key=True)
+
+
+class DirectMessage(database.Model):
+    __tablename__ = "DirectMessages"
+
+    direct_message_uuid = database.Column(database.String(48), primary_key=True)
+    send_from_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
+    send_from = database.relationship("User", back_populates="sent_direct_messages")
+    send_to_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
+    send_to = database.relationship("User", back_populates="received_direct_messages")
+    body = database.Column(database.Unicode, nullable=False)
+    send_time = database.Column(database.DateTime, nullable=True)
+    scheduled_send_time = database.Column(database.DateTime, nullable=True)
+    created_at = database.Column(database.DateTime, nullable=False)
+    updated_at = database.Column(database.DateTime, nullable=True)
+    deleted = database.Column(database.Boolean, default=False, nullable=False)
