@@ -206,8 +206,8 @@ def update_my_subboards(board_uuid: str, request: schemas.NewMySubboards, curren
     return status.HTTP_201_CREATED
 
 @api_router.get("/api/v1/board/{board_uuid}/messages", response_model=List[schemas.Message])
-def get_messages(board_uuid: str, only_sent: bool, only_scheduled: bool, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
-    messages = crud.read_messages(database, board_uuid, only_sent, only_scheduled)
+def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
+    messages = crud.read_messages(database, board_uuid)
     if not messages:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
@@ -225,8 +225,8 @@ def post_messages(board_uuid: str, request: schemas.NewMessage, _request: Reques
     return JSONResponse(response, status.HTTP_201_CREATED)
 
 @api_router.delete("/api/v1/board/{board_uuid}/message/{message_uuid}")
-def delete_messages(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    message = crud.read_message(database, board_uuid, message_uuid)
+def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    message = crud.delete_message(database, board_uuid, message_uuid)
     if not message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
     
@@ -240,3 +240,29 @@ def get_my_messages(board_uuid: str, current_user: models.User=Depends(_get_curr
     
     return my_messages
 
+@api_router.get("/api/v1/direct_messages", response_model=List[schemas.DirectMessage])
+def get_direct_messages(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.DirectMessage]:
+    direct_messages = crud.read_direct_messages(database, current_user.user_uuid)
+    if not direct_messages:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    
+    return direct_messages
+
+@api_router.post("/api/v1/direct_message")
+def post_direct_message(request: schemas.NewDirectMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    direct_message = crud.create_direct_message(database, current_user.user_uuid, request)
+    if not direct_message:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    response = {
+        "Location": urllib.parse.urljoin(_request.url._url, f"./direct_message/{direct_message.direct_message_uuid}")
+    }
+
+    return JSONResponse(response, status.HTTP_201_CREATED)
+
+@api_router.delete("/api/v1/direct_message/{direct_message_uuid}")
+def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    direct_message = crud.delete_direct_message(database, direct_message_uuid)
+    if not direct_message:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return direct_message

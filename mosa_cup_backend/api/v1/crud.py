@@ -185,18 +185,11 @@ def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_
 
     return user
 
-def read_messages(database: Session, board_uuid: str, only_sent: bool, only_scheduled: bool) -> List[models.Message]:
-    query = database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
-    if only_sent:
-        query = query.filter(models.Message.send_time.isnot(None))
-    if only_scheduled:
-        query = query.filter(models.Message.scheduled_send_time.isnot(None))
-    messages = query.all()
-
-    return messages
+def read_messages(database: Session, board_uuid: str) -> List[models.Message]:
+    return database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False)).all()
 
 def read_message(database: Session, board_uuid: str, message_uuid: str) -> Optional[models.Message]:
-    return database.query(models.Message).filter(and_(models.Message.message_uuid == message_uuid, models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
+    return database.query(models.Message).filter(and_(models.Message.message_uuid == message_uuid, models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False)).first()
 
 def create_message(database: Session, board_uuid: str, new_message: schemas.NewMessage) -> Optional[models.Message]:
     message_uuid = str(uuid4())
@@ -235,3 +228,43 @@ def read_my_messages(database: Session, user_uuid: str, board_uuid: str) -> List
     messages = query.filter(models.Message.subboards.any(models.Subboard.subboard_uuid.in_([my_subboard.subboard_uuid for my_subboard in my_subboards]))).all()
 
     return messages
+
+def read_direct_messages(database: Session, user_uuid: str) -> List[models.DirectMessage]:
+    return database.query(models.DirectMessage).filter(and_(models.DirectMessage.send_from.has(user_uuid=user_uuid), models.DirectMessage.deleted == False)).all()
+
+def read_direct_message(database: Session, direct_message_uuid: str) -> Optional[models.DirectMessage]:
+    return database.query(models.DirectMessage).filter(and_(models.DirectMessage.direct_message_uuid == direct_message_uuid, models.Message.deleted == False)).first()
+
+def create_direct_message(database: Session, user_uuid: str, new_direct_message: schemas.NewDirectMessage) -> Optional[models.DirectMessage]:
+    direct_messages = []
+    for send_to_uuid in new_direct_message.send_to_uuids:
+        direct_message_uuid = str(uuid4())
+        created_at = datetime.now()
+        direct_message = models.DirectMessage(
+            direct_message_uuid=direct_message_uuid,
+            send_from_uuid=user_uuid,
+            send_to_uuid=send_to_uuid,
+            body=new_direct_message.body,
+            scheduled_send_time=new_direct_message.scheduled_send_time,
+            created_at=created_at
+        )
+        database.add(direct_message)
+        database.commit()
+        database.refresh(direct_message)
+        direct_messages.append(direct_message)
+
+    return direct_messages
+
+def delete_direct_message(database: Session, message_uuid: str) -> models.DirectMessage:
+    direct_message = read_direct_message(database, message_uuid)
+    if direct_message:
+        updated_at = datetime.now()
+        direct_message.updated_at = updated_at
+        direct_message.deleted = True
+        database.commit()
+        database.refresh(direct_message)
+
+    return direct_message
+
+def read_my_direct_messages(database: Session, user_uuid: str) -> List[models.DirectMessage]:
+    return database.query(models.DirectMessage).filter(and_(models.DirectMessage.send_to_uuid == user_uuid, models.DirectMessage.deleted == False)).all()

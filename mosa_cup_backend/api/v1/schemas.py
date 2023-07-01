@@ -139,8 +139,32 @@ class Message(BaseModel):
     updated_at: Optional[datetime]
     deleted: bool
 
+    class Config:
+        orm_mode = True
+
 
 class NewMessage(BaseModel):
     subboard_uuids: List[str]
+    body: str
+    scheduled_send_time: Optional[datetime]
+
+
+class DirectMessage(BaseModel):
+    direct_message_uuid: str
+    send_from: User
+    send_to: User
+    body: str
+    send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
+    created_at: datetime
+    updated_at: datetime
+    deleted: bool
+
+    class Config:
+        orm_mode = True
+
+
+class NewDirectMessage(BaseModel):
+    send_to_uuids: List[str]
     body: str
     scheduled_send_time: Optional[datetime]
