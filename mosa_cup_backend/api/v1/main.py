@@ -266,3 +266,11 @@ def delete_direct_message(direct_message_uuid: str, current_user: models.User=De
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
     
     return direct_message
+
+@api_router.get("/api/v1/my_direct_messages", response_model=List[schemas.DirectMessage])
+def get_my_direct_messages(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.DirectMessage]:
+    my_direct_messages = crud.read_my_direct_messages(database, current_user.user_uuid)
+    if not my_direct_messages:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    
+    return my_direct_messages
