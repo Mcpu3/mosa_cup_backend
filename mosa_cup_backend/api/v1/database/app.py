@@ -89,7 +89,7 @@ class Message(database.Model):
     scheduled_send_time = database.Column(database.DateTime, nullable=True)
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
-    deleted = database.Column(database.DateTime, default=False, nullable=False)
+    deleted = database.Column(database.Boolean, default=False, nullable=False)
 
 
 class SubboardMessage(database.Model):

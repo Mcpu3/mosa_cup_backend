@@ -141,6 +141,6 @@ class Message(BaseModel):
 
 
 class NewMessage(BaseModel):
-    subboard_uuids: Optional[List[str]]
+    subboard_uuids: List[str]
     body: str
     scheduled_send_time: Optional[datetime]

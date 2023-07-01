@@ -79,7 +79,7 @@ class Message(Base):
     scheduled_send_time = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
-    deleted = Column(DateTime, default=False, nullable=False)
+    deleted = Column(Boolean, default=False, nullable=False)
 
 
 class SubboardMessage(Base):

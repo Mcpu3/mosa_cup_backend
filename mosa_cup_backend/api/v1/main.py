@@ -232,9 +232,11 @@ def delete_messages(board_uuid: str, message_uuid: str, current_user: models.Use
     
     return status.HTTP_200_OK
 
-@api_router.get("/api/v1/board/{board_uuid}/my_messages")
-def get_my_messages(board_uuid: str, only_sent: bool, only_scheduled: bool, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    my_messages = crud.read_my_messages(database, current_user.user_uuid, board_uuid, only_sent, only_scheduled)
+@api_router.get("/api/v1/board/{board_uuid}/my_messages", response_model=List[schemas.Message])
+# def get_my_messages(board_uuid: str, only_sent: bool, only_scheduled: bool, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
+def get_my_messages(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
+    # my_messages = crud.read_my_messages(database, current_user.user_uuid, board_uuid, only_sent, only_scheduled)
+    my_messages = crud.read_my_messages(database, current_user.user_uuid, board_uuid)
     if not my_messages:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
