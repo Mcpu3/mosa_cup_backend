@@ -7,10 +7,20 @@ class Token(BaseModel):
     access_token: str
 
 
+class LINEUser(BaseModel):
+    line_user_uuid: str
+    user_id: str
+
+
+class NewLINEUser(BaseModel):
+    user_id: str
+
+
 class User(BaseModel):
+    user_uuid: str
     username: str
     display_name: Optional[str]
-    line_id: Optional[str]
+    line_user: Optional[LINEUser]
 
     class Config:
         orm_mode = True
@@ -19,6 +29,7 @@ class User(BaseModel):
 class Signup(BaseModel):
     username: str
     password: str
+    line_user_uuid: Optional[str]
 
 
 class Password(BaseModel):
@@ -27,10 +38,6 @@ class Password(BaseModel):
 
 class DisplayName(BaseModel):
     new_display_name: str
-
-
-class LineId(BaseModel):
-    new_line_id: str
 
 
 class Board(BaseModel):

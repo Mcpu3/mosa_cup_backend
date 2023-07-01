@@ -4,6 +4,16 @@ from sqlalchemy.orm import relationship
 from api.v1.database import Base
 
 
+class LINEUser(Base):
+    __tablename__ = "LINEUsers"
+
+    line_user_uuid = Column(String(48), primary_key=True)
+    user_id = Column(Unicode, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)
+
+
 class User(Base):
     __tablename__ = "Users"
 
@@ -11,7 +21,8 @@ class User(Base):
     username = Column(String(48), unique=True, nullable=False)
     hashed_password = Column(Unicode, nullable=False)
     display_name = Column(Unicode, nullable=True)
-    line_id = Column(Unicode, nullable=True)
+    line_user_uuid = Column(String(48), ForeignKey("LINEUsers.line_user_uuid"), nullable=True)
+    line_user = relationship("LINEUser")
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)

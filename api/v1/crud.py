@@ -9,6 +9,20 @@ from sqlalchemy.orm import Session
 from api.v1 import models, schemas
 
 
+def create_line_user(database: Session, new_line_user: schemas.NewLINEUser) -> models.LINEUser:
+    line_user_uuid = str(uuid4())
+    created_at = datetime.now()
+    line_user = models.LINEUser(
+        line_user_uuid=line_user_uuid,
+        user_id=new_line_user.user_id,
+        created_at=created_at
+    )
+    database.add(line_user)
+    database.commit()
+    database.refresh(line_user)
+
+    return line_user
+
 def read_user(database: Session, user_uuid: Optional[str]=None, username: Optional[str]=None) -> Optional[models.User]:
     user = None
     if user_uuid:
@@ -34,6 +48,8 @@ def create_user(database: Session, signup: schemas.Signup) -> Optional[models.Us
         hashed_password=hashed_password,
         created_at=created_at
     )
+    if signup.line_user_uuid:
+        user.line_user_uuid = signup.line_user_uuid
     database.add(user)
     database.commit()
     database.refresh(user)
@@ -57,17 +73,6 @@ def update_display_name(database: Session, user_uuid: str, display_name: schemas
     if user:
         updated_at = datetime.now()
         user.display_name = display_name.new_display_name
-        user.updated_at = updated_at
-        database.commit()
-        database.refresh(user)
-
-    return user
-
-def update_line_id(database: Session, user_uuid: str, line_id: schemas.LineId) -> Optional[models.User]:
-    user = read_user(database, user_uuid=user_uuid)
-    if user:
-        updated_at = datetime.now()
-        user.line_id = line_id.new_line_id
         user.updated_at = updated_at
         database.commit()
         database.refresh(user)

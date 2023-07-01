@@ -15,6 +15,16 @@ database = SQLAlchemy(app)
 migrate = Migrate(app, database)
 
 
+class LINEUser(database.Model):
+    __tablename__ = "LINEUsers"
+
+    line_user_uuid = database.Column(database.String(48), primary_key=True)
+    user_id = database.Column(database.Unicode, nullable=False)
+    created_at = database.Column(database.DateTime, nullable=False)
+    updated_at = database.Column(database.DateTime, nullable=True)
+    deleted = database.Column(database.Boolean, default=False, nullable=False)
+
+
 class User(database.Model):
     __tablename__ = "Users"
 
@@ -22,7 +32,8 @@ class User(database.Model):
     username = database.Column(database.String(48), unique=True, nullable=False)
     hashed_password = database.Column(database.Unicode, nullable=False)
     display_name = database.Column(database.Unicode, nullable=True)
-    line_id = database.Column(database.Unicode, nullable=True)
+    line_user_uuid = database.Column(database.String(48), database.ForeignKey("LINEUsers.line_user_uuid"), nullable=True)
+    line_user = database.relationship("LINEUser")
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
