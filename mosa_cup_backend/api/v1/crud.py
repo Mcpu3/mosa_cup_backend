@@ -187,10 +187,10 @@ def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_
     return user
 
 def read_messages(database: Session, board_uuid: str) -> List[models.Message]:
-    return database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False)).all()
+    return database.query(models.Message).filter(and_(models.Message.board_uuid == board_uuid, models.Message.deleted == False)).all()
 
 def read_message(database: Session, board_uuid: str, message_uuid: str) -> Optional[models.Message]:
-    return database.query(models.Message).filter(and_(models.Message.message_uuid == message_uuid, models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False)).first()
+    return database.query(models.Message).filter(and_(models.Message.message_uuid == message_uuid, models.Message.board_uuid == board_uuid, models.Message.deleted == False)).first()
 
 def create_message(database: Session, board_uuid: str, new_message: schemas.NewMessage) -> Optional[models.Message]:
     message_uuid = str(uuid4())
@@ -202,10 +202,9 @@ def create_message(database: Session, board_uuid: str, new_message: schemas.NewM
         scheduled_send_time=new_message.scheduled_send_time,
         created_at=created_at
     )
-    if new_message.subboard_uuids:
-        for subboard_uuid in new_message.subboard_uuids:
-            subboard = read_subboard(database, board_uuid, subboard_uuid)
-            message.subboards.append(subboard)
+    for subboard_uuid in new_message.subboard_uuids:
+        subboard = read_subboard(database, board_uuid, subboard_uuid)
+        message.subboards.append(subboard)
     database.add(message)
     database.commit()
     database.refresh(message)
@@ -224,7 +223,7 @@ def delete_message(database: Session, board_uuid: str, message_uuid: str) -> mod
     return message
 
 def read_my_messages(database: Session, user_uuid: str, board_uuid: str) -> List[models.Message]:
-    query = database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
+    query = database.query(models.Message).filter(and_(models.Message.board_uuid == board_uuid, models.Message.deleted == False))
     my_subboards = read_my_subboards(database, user_uuid, board_uuid)
     messages = query.filter(models.Message.subboards.any(models.Subboard.subboard_uuid.in_([my_subboard.subboard_uuid for my_subboard in my_subboards]))).all()
 
@@ -270,53 +269,73 @@ def delete_direct_message(database: Session, message_uuid: str) -> models.Direct
 def read_my_direct_messages(database: Session, user_uuid: str) -> List[models.DirectMessage]:
     return database.query(models.DirectMessage).filter(and_(models.DirectMessage.send_to_uuid == user_uuid, models.DirectMessage.deleted == False)).all()
 
-def read_board_forms(database: Session,board_uuid: str) -> list[models.Form]:
-    return database.query(models.Form).filter(models.Form.board_uuid == board_uuid).all()
+def read_forms(database: Session, board_uuid: str) -> List[models.Form]:
+    return database.query(models.Form).filter(and_(models.Form.board_uuid == board_uuid, models.Form.deleted == False)).all()
 
-def read_subboard_forms(database: Session,board_uuid: str,subboard_uuid: str) ->list[models.Form]:
-    return database.query(models.Form).filter(and_(models.Form.board_uuid == board_uuid,models.Form.subboard_uuid == subboard_uuid)).all()
+def read_form(database: Session, board_uuid: str, form_uuid: str) -> Optional[models.Form]:
+    return database.query(models.Form).filter(and_(models.Form.form_uuid == form_uuid, models.Form.board_uuid == board_uuid, models.Form.deleted == False)).first()
 
-def create_question(database: Session,form_uuid: str,new_question: schemas.FormYesNoQuestion) -> models.FormYesNoQuestion:
-    form_question_uuid =str(uuid4())
-    created_at = datetime.now()
-    question = models.FormYesNoQuestion(
-        form_question_uuid = form_question_uuid,
-        form_uuid = form_uuid,
-        title = new_question.title,
-        yes = new_question.yes,
-        no = new_question.no,
-        created_at = created_at
-    )
-    database.add(question)
-    database.commit()
-    database.refresh(question)
-
-    return question
-
-
-def create_board_form(database: Session,board_uuid: str,new_board_form: schemas.NewForm) -> models.Form:
+def create_form(database: Session, board_uuid: str, new_form: schemas.NewForm) -> Optional[models.Form]:
     form_uuid = str(uuid4())
     created_at = datetime.now()
-    board_form = models.Form(
-        form_uuid = form_uuid,
-        board_uuid = board_uuid,
-        title = new_board_form.title,
-        created_at = created_at
+    form = models.Form(
+        form_uuid=form_uuid,
+        board_uuid=board_uuid,
+        title=new_form.title,
+        scheduled_send_time=new_form.scheduled_send_time,
+        created_at=created_at
     )
-    database.add(board_form)
+    for subboard_uuid in new_form.subboard_uuids:
+        subboard = read_subboard(database, board_uuid, subboard_uuid)
+        form.subboards.append(subboard)
+    database.add(form)
     database.commit()
-    database.refresh(board_form)
+    database.refresh(form)
+    if form:
+        for new_form_question in new_form.form_questions:
+            form_question = create_form_question(database, form.form_uuid, new_form_question)
+            if form_question:
+                form.form_questions.append(form_question)
+        database.add(form)
+        database.commit()
+        database.refresh(form)
 
-def create_subboard_form(database: Session,board_uuid: str,subboard_uuid: str,new_subboard_form: schemas.NewForm) -> models.Form:
-    form_uuid = str(uuid4())
+    return form
+
+def delete_form(database: Session, board_uuid: str, form_uuid: str) -> models.Form:
+    form = read_form(database, board_uuid, form_uuid)
+    if form:
+        updated_at = datetime.now()
+        form.updated_at = updated_at
+        form.deleted = True
+        for form_question in form.form_questions:
+            form_question.updated_at = updated_at
+            form_question.deleted = True
+        database.commit()
+        database.refresh(form)
+
+    return form
+
+def create_form_question(database: Session, form_uuid: str, new_form_question: schemas.FormYesNoQuestion) -> Optional[models.FormYesNoQuestion]:
+    form_question_uuid = str(uuid4())
     created_at = datetime.now()
-    subboard_form = models.Form(
-        form_uuid = form_uuid,
-        board_uuid = board_uuid,
-        subboard_uuid = subboard_uuid,
-        title = new_subboard_form.title,
-        created_at = created_at
+    form_question = models.FormYesNoQuestion(
+        form_question_uuid=form_question_uuid,
+        form_uuid=form_uuid,
+        title=new_form_question.title,
+        yes=new_form_question.yes,
+        no=new_form_question.no,
+        created_at=created_at
     )
-    database.add(subboard_form)
+    database.add(form_question)
     database.commit()
-    database.refresh(subboard_form)
+    database.refresh(form_question)
+
+    return form_question
+
+def read_my_forms(database: Session, user_uuid: str, board_uuid: str) -> List[models.Form]:
+    query = database.query(models.Form).filter(and_(models.Form.board_uuid == board_uuid, models.Form.deleted == False))
+    my_subboards = read_my_subboards(database, user_uuid, board_uuid)
+    forms = query.filter(models.Form.subboards.any(models.Subboard.subboard_uuid.in_([my_subboard.subboard_uuid for my_subboard in my_subboards]))).all()
+
+    return forms

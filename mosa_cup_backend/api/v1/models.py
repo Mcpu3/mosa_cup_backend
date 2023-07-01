@@ -60,7 +60,7 @@ class Subboard(Base):
     deleted = Column(Boolean, default=False, nullable=False)
 
     received_messages = relationship("Message", secondary="SubboardMessages", back_populates="subboards")
-    received_forms = relationship("Form", back_populates="subboards")
+    received_forms = relationship("Form", secondary="SubboardForms", back_populates="subboards")
 
 
 class SubboardMember(Base):
@@ -113,7 +113,7 @@ class Form(Base):
 
     form_uuid = Column(String(48), primary_key=True)
     board_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), nullable=True)
-    board = relationship("Board", bacl_populates="received_forms")
+    board = relationship("Board", back_populates="received_forms")
     subboards = relationship("Subboard", secondary="SubboardForms", back_populates="received_forms")
     title = Column(Unicode, nullable=False)
     send_time = Column(DateTime, nullable=True)
@@ -124,6 +124,7 @@ class Form(Base):
 
     form_questions = relationship("FormYesNoQuestion", back_populates="form")
     form_responses = relationship("FormResponse", back_populates="form")
+
 
 class FormYesNoQuestion(Base):
     __tablename__ = "FormYesNoQuestions"
@@ -139,6 +140,14 @@ class FormYesNoQuestion(Base):
     deleted = Column(Boolean, default=False, nullable=False)
 
     form_question_responses = relationship("FormYesNoQuestionResponse", back_populates="form_question")
+
+
+class SubboardForm(Base):
+    __tablename__ = "SubboardForms"
+
+    subboard_uuid = Column(String(48), ForeignKey("Subboards.subboard_uuid"), primary_key=True)
+    form_uuid = Column(String(48), ForeignKey("Forms.form_uuid"), primary_key=True)
+
 
 class FormResponse(Base):
     __tablename__ = "FormResponses"
@@ -161,7 +170,7 @@ class FormYesNoQuestionResponse(Base):
     form_question_response_uuid = Column(String(48), primary_key=True)
     form_response_uuid = Column(String(48), ForeignKey("FormResponses.form_response_uuid"), nullable=False)
     form_response = relationship("FormResponse", back_populates="form_question_responses")
-    form_question_uuid = Column(String, ForeignKey("FormYesNoQuestions.form_question_uuid"), nullable=False)
+    form_question_uuid = Column(String(48), ForeignKey("FormYesNoQuestions.form_question_uuid"), nullable=False)
     form_question = relationship("FormYesNoQuestion", back_populates="form_question_responses")
     yes = Column(Boolean, nullable=False)
     no = Column(Boolean, nullable=False)

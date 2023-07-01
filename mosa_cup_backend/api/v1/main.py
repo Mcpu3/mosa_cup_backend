@@ -214,7 +214,7 @@ def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current
     return messages
 
 @api_router.post("/api/v1/board/{board_uuid}/message")
-def post_messages(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+def post_message(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     message = crud.create_message(database, board_uuid, request)
     if not message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -275,50 +275,37 @@ def get_my_direct_messages(current_user: models.User=Depends(_get_current_user),
     
     return my_direct_messages
 
-@api_router.get("/board/{board_uuid}/forms",response_model=schemas.Forms)
-def get_board_forms(board_uuid: str,database: Session=Depends(get_database),current_user: models.User=Depends(get_current_user)):
-    board_forms = crud.read_board_forms(database,board_uuid)
-    if not board_forms:
+@api_router.get("/api/v1/board/{board_uuid}/forms", response_model=List[schemas.Form])
+def get_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
+    forms = crud.read_forms(database, board_uuid)
+    if not forms:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
-    return board_forms
+    return forms
 
-@api_router.post("/board/{board_uuid}/form")
-def post_board_form(board_uuid: str,request: schemas.NewForm,_request:Request,database: Session=Depends(get_database),current_user: models.User=Depends(get_current_user)):
-    if (not request.title) or (not request.questions):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    form = crud.create_board_form(database,board_uuid,request)
+@api_router.post("/api/v1/board/{board_uuid}/form")
+def post_form(board_uuid: str, request: schemas.NewForm, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    form = crud.create_form(database, board_uuid, request)
     if not form:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    for _question in request.questions:
-        question = crud.create_question(database,form.form_uuid,_question)
-    
     response = {
-        "Location": urllib.parse.urljoin(_request.url._url,f"./board/{board_uuid}")
+        "Location": urllib.parse.urljoin(_request.url._url, f"./form/{form.form_uuid}")
     }
 
     return JSONResponse(response, status.HTTP_201_CREATED)
 
-@api_router.get("/baord/{board_uuid}/subboard/{subboard_uuid}/forms")
-def get_subboard_forms(board_uuid: str,subboard_uuid: str,database: Session=Depends(get_database),current_user: models.User=Depends(get_current_user)):
-    subboard_forms = crud.read_subboard_forms(database,board_uuid,subboard_uuid)
-    if not subboard_forms:
+@api_router.delete("/api/v1/board/{board_uuid}/form/{form_uuid}")
+def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    form = crud.delete_form(database, board_uuid, form_uuid)
+    if not form:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_200_OK
+
+@api_router.get("/api/v1/board/{board_uuid}/my_forms", response_model=List[schemas.Form])
+def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
+    my_forms = crud.read_my_forms(database, current_user.user_uuid, board_uuid)
+    if not my_forms:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
-    return subboard_forms
-
-@api_router.post("/board/{board_uuid}/subboard/{subboard_uuid}/form")
-def post_subboard_form(board_uuid: str,subboard_uuid: str,request: schemas.NewForm,_request:Request,database: Session=Depends(get_database),current_user: models.User=Depends(get_current_user)):
-    if (not request.title) or (not request.questions):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    subboard_form = crud.create_subboard_form(database,board_uuid,subboard_uuid,request)
-    if not subboard_form:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    for _question in request.questions:
-        question = crud.create_question(database,subboard_form.form_uuid,_question)
-    
-    response = {
-        "Location": urllib.parse.urljoin(_request.url._url,f"./board/{board_uuid}/subboard/{subboard_uuid}")
-    }
-
-    return JSONResponse(response, status.HTTP_201_CREATED)
+    return my_forms
