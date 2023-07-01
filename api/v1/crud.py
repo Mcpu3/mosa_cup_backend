@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
-from mosa_cup_backend.api.v1 import models, schemas
+from api.v1 import models, schemas
 
 
 def read_user(database: Session, user_uuid: Optional[str]=None, username: Optional[str]=None) -> Optional[models.User]:

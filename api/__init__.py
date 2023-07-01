@@ -1,7 +1,7 @@
 import azure.functions as func
 from fastapi import FastAPI
 
-from mosa_cup_backend.api.v1 import main
+from api.v1 import main
 
 
 app = FastAPI()

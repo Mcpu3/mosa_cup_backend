@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Unicode
 from sqlalchemy.orm import relationship
 
-from mosa_cup_backend.api.v1.database import Base
+from api.v1.database import Base
 
 
 class User(Base):
@@ -19,6 +19,8 @@ class User(Base):
     boards = relationship("Board", back_populates="administrator")
     my_boards = relationship("Board", secondary="BoardMembers", back_populates="members")
     my_subboards = relationship("Subboard", secondary="SubboardMembers", back_populates="members")
+    sent_direct_messages = relationship("DirectMessage", back_populates="send_from", foreign_keys="DirectMessage.send_from_uuid")
+    received_direct_messages = relationship("DirectMessage", back_populates="send_to", foreign_keys="DirectMessage.send_to_uuid")
     sent_form_responses = relationship("FormResponse", back_populates="respondent")
 
 
@@ -29,7 +31,7 @@ class Board(Base):
     board_id = Column(Unicode, nullable=False)
     board_name = Column(Unicode, nullable=False)
     administrator_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
-    administrator = relationship("User", back_populates="boards")
+    administrator = relationship("User", back_populates="boards", foreign_keys=[administrator_uuid])
     members = relationship("User", secondary="BoardMembers", back_populates="my_boards")
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
@@ -97,9 +99,9 @@ class DirectMessage(Base):
 
     direct_message_uuid = Column(String(48), primary_key=True)
     send_from_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
-    send_from = relationship("User", back_populates="sent_direct_messages")
+    send_from = relationship("User", back_populates="sent_direct_messages", foreign_keys=[send_from_uuid])
     send_to_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
-    send_to = relationship("User", back_populates="received_direct_messages")
+    send_to = relationship("User", back_populates="received_direct_messages", foreign_keys=[send_to_uuid])
     body = Column(Unicode, nullable=False)
     send_time = Column(DateTime, nullable=True)
     scheduled_send_time = Column(DateTime, nullable=True)
@@ -155,7 +157,7 @@ class FormResponse(Base):
     form_response_uuid = Column(String(48), primary_key=True)
     respondent_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
     respondent = relationship("User", back_populates="sent_form_responses")
-    form_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), nullable=False)
+    form_uuid = Column(String(48), ForeignKey("Forms.board_uuid"), nullable=False)
     form = relationship("Form", back_populates="form_responses")
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)

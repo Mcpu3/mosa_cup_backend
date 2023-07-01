@@ -9,8 +9,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
-from mosa_cup_backend.api.v1 import crud, models, schemas
-from mosa_cup_backend.api.v1.database import LocalSession, engine
+from api.v1 import crud, models, schemas
+from api.v1.database import LocalSession, engine
 
 
 models.Base.metadata.create_all(engine)
