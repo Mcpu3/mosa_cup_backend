@@ -225,7 +225,7 @@ def update_my_subboards(board_uuid: str, request: schemas.NewMySubboards, curren
     
     return status.HTTP_201_CREATED
 
-@api_router.get("/api/v1/board/{board_uuid}/messages", response_model=List[schemas.Message])
+@api_router.get("/board/{board_uuid}/messages", response_model=List[schemas.Message])
 def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
     messages = crud.read_messages(database, board_uuid)
     if not messages:
@@ -233,7 +233,7 @@ def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current
     
     return messages
 
-@api_router.post("/api/v1/board/{board_uuid}/message")
+@api_router.post("/board/{board_uuid}/message")
 def post_message(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     message = crud.create_message(database, board_uuid, request)
     if not message:
@@ -256,7 +256,7 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
 
     line_bot_api.multicast(line_user_ids, TextSendMessage(message.body))
 
-@api_router.delete("/api/v1/board/{board_uuid}/message/{message_uuid}")
+@api_router.delete("/board/{board_uuid}/message/{message_uuid}")
 def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     message = crud.delete_message(database, board_uuid, message_uuid)
     if not message:
@@ -264,7 +264,7 @@ def delete_message(board_uuid: str, message_uuid: str, current_user: models.User
     
     return status.HTTP_200_OK
 
-@api_router.get("/api/v1/board/{board_uuid}/my_messages", response_model=List[schemas.Message])
+@api_router.get("/board/{board_uuid}/my_messages", response_model=List[schemas.Message])
 def get_my_messages(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
     my_messages = crud.read_my_messages(database, current_user.user_uuid, board_uuid)
     if not my_messages:
@@ -272,7 +272,7 @@ def get_my_messages(board_uuid: str, current_user: models.User=Depends(_get_curr
     
     return my_messages
 
-@api_router.get("/api/v1/direct_messages", response_model=List[schemas.DirectMessage])
+@api_router.get("/direct_messages", response_model=List[schemas.DirectMessage])
 def get_direct_messages(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.DirectMessage]:
     direct_messages = crud.read_direct_messages(database, current_user.user_uuid)
     if not direct_messages:
@@ -280,7 +280,7 @@ def get_direct_messages(current_user: models.User=Depends(_get_current_user), da
     
     return direct_messages
 
-@api_router.post("/api/v1/direct_message")
+@api_router.post("/direct_message")
 def post_direct_message(request: schemas.NewDirectMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     direct_message = crud.create_direct_message(database, current_user.user_uuid, request)
     if not direct_message:
@@ -291,7 +291,7 @@ def post_direct_message(request: schemas.NewDirectMessage, _request: Request, cu
 
     return JSONResponse(response, status.HTTP_201_CREATED)
 
-@api_router.delete("/api/v1/direct_message/{direct_message_uuid}")
+@api_router.delete("/direct_message/{direct_message_uuid}")
 def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     direct_message = crud.delete_direct_message(database, direct_message_uuid)
     if not direct_message:
@@ -304,7 +304,7 @@ def delete_direct_message(direct_message_uuid: str, current_user: models.User=De
 def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> None:
     line_bot_api.push_message(direct_message.send_to.line_user.user_id, TextSendMessage(direct_message.body))
 
-@api_router.get("/api/v1/my_direct_messages", response_model=List[schemas.DirectMessage])
+@api_router.get("/my_direct_messages", response_model=List[schemas.DirectMessage])
 def get_my_direct_messages(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.DirectMessage]:
     my_direct_messages = crud.read_my_direct_messages(database, current_user.user_uuid)
     if not my_direct_messages:
@@ -312,7 +312,7 @@ def get_my_direct_messages(current_user: models.User=Depends(_get_current_user),
     
     return my_direct_messages
 
-@api_router.get("/api/v1/board/{board_uuid}/forms", response_model=List[schemas.Form])
+@api_router.get("/board/{board_uuid}/forms", response_model=List[schemas.Form])
 def get_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
     forms = crud.read_forms(database, board_uuid)
     if not forms:
@@ -320,7 +320,7 @@ def get_forms(board_uuid: str, current_user: models.User=Depends(_get_current_us
     
     return forms
 
-@api_router.post("/api/v1/board/{board_uuid}/form")
+@api_router.post("/board/{board_uuid}/form")
 def post_form(board_uuid: str, request: schemas.NewForm, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     form = crud.create_form(database, board_uuid, request)
     if not form:
@@ -331,7 +331,7 @@ def post_form(board_uuid: str, request: schemas.NewForm, _request: Request, curr
 
     return JSONResponse(response, status.HTTP_201_CREATED)
 
-@api_router.delete("/api/v1/board/{board_uuid}/form/{form_uuid}")
+@api_router.delete("/board/{board_uuid}/form/{form_uuid}")
 def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     form = crud.delete_form(database, board_uuid, form_uuid)
     if not form:
@@ -339,7 +339,7 @@ def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depen
     
     return status.HTTP_200_OK
 
-@api_router.get("/api/v1/board/{board_uuid}/my_forms", response_model=List[schemas.Form])
+@api_router.get("/board/{board_uuid}/my_forms", response_model=List[schemas.Form])
 def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
     my_forms = crud.read_my_forms(database, current_user.user_uuid, board_uuid)
     if not my_forms:
