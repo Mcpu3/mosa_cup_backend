@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from passlib.context import CryptContext
-from sqlalchemy import and_, any_
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from mosa_cup_backend.api.v1 import models, schemas
@@ -205,7 +205,7 @@ def create_message(database: Session, board_uuid: str, new_message: schemas.NewM
         message_uuid=message_uuid,
         board_uuid=board_uuid,
         body=new_message.body,
-        # scheduled_send_time=new_message.scheduled_send_time,
+        scheduled_send_time=new_message.scheduled_send_time,
         created_at=created_at
     )
     if new_message.subboard_uuids:
