@@ -1,5 +1,6 @@
 import os
 from typing import List
+import urllib.parse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -7,7 +8,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-import urllib.parse
 
 from mosa_cup_backend.api.v1 import crud, models, schemas
 from mosa_cup_backend.api.v1.database import LocalSession, engine
@@ -214,7 +214,7 @@ def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current
     return messages
 
 @api_router.post("/api/v1/board/{board_uuid}/message")
-def post_messages(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+def post_message(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     message = crud.create_message(database, board_uuid, request)
     if not message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -274,3 +274,38 @@ def get_my_direct_messages(current_user: models.User=Depends(_get_current_user),
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
     return my_direct_messages
+
+@api_router.get("/api/v1/board/{board_uuid}/forms", response_model=List[schemas.Form])
+def get_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
+    forms = crud.read_forms(database, board_uuid)
+    if not forms:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    
+    return forms
+
+@api_router.post("/api/v1/board/{board_uuid}/form")
+def post_form(board_uuid: str, request: schemas.NewForm, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    form = crud.create_form(database, board_uuid, request)
+    if not form:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    response = {
+        "Location": urllib.parse.urljoin(_request.url._url, f"./form/{form.form_uuid}")
+    }
+
+    return JSONResponse(response, status.HTTP_201_CREATED)
+
+@api_router.delete("/api/v1/board/{board_uuid}/form/{form_uuid}")
+def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    form = crud.delete_form(database, board_uuid, form_uuid)
+    if not form:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_200_OK
+
+@api_router.get("/api/v1/board/{board_uuid}/my_forms", response_model=List[schemas.Form])
+def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
+    my_forms = crud.read_my_forms(database, current_user.user_uuid, board_uuid)
+    if not my_forms:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+    
+    return my_forms
