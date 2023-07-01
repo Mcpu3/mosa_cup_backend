@@ -1,10 +1,14 @@
+from contextlib import contextmanager
 import os
 from typing import List
 import urllib.parse
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from linebot import LineBotApi, WebhookHandler
+from linebot.exceptions import InvalidSignatureError
+from linebot.models import FollowEvent, TextSendMessage
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -17,7 +21,21 @@ models.Base.metadata.create_all(engine)
 
 api_router = APIRouter()
 
+CHANNEL_SECRET_KEY = os.getenv("CHANNEL_SECRET_KEY")
+CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
+
+line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+webhook_handler = WebhookHandler(CHANNEL_SECRET_KEY)
+
 def _get_database():
+    database = LocalSession()
+    try:
+        yield database
+    finally:
+        database.close()
+
+@contextmanager
+def _get_database_with_contextmanager():
     database = LocalSession()
     try:
         yield database
@@ -38,13 +56,23 @@ def _get_current_user(access_token: str=Depends(OAuth2PasswordBearer("/api/v1/si
     
     return user
 
-@api_router.post("/line_user", response_model=schemas.LINEUser)
-def post_line_user(request: schemas.NewLINEUser, database: Session=Depends(_get_database)) -> schemas.LINEUser:
-    line_user = crud.create_line_user(database, request)
-    if not line_user:
+@api_router.post("/callback")
+async def callback(request: Request, x_line_signature=Header()):
+    body = await request.body()
+    try:
+        webhook_handler.handle(body.decode("utf-8"), x_line_signature)
+    except InvalidSignatureError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
     
-    return line_user
+    return status.HTTP_200_OK
+
+@webhook_handler.add(FollowEvent)
+def handle_follow_event(event: FollowEvent):
+    with _get_database() as database:
+        line_user = crud.create_line_user(database, event.source.user_id)
+    if line_user:
+        signup_url = urllib.parse.urljoin("https://aaa.bbb.ccc", f"./{line_user.line_user_uuid}")
+        line_bot_api.push_message(event.source.user_id, TextSendMessage(f"{signup_url}からサインアップしてね!"))
 
 @api_router.post("/signup")
 def signup(request: schemas.Signup, _request: Request, database: Session=Depends(_get_database)):
