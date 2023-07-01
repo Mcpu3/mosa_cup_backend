@@ -157,7 +157,7 @@ class FormResponse(Base):
     form_response_uuid = Column(String(48), primary_key=True)
     respondent_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
     respondent = relationship("User", back_populates="sent_form_responses")
-    form_uuid = Column(String(48), ForeignKey("Forms.board_uuid"), nullable=False)
+    form_uuid = Column(String(48), ForeignKey("Forms.form_uuid"), nullable=False)
     form = relationship("Form", back_populates="form_responses")
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
