@@ -271,6 +271,18 @@ def create_direct_message(database: Session, user_uuid: str, new_direct_message:
 
     return direct_messages
 
+def update_direct_message_send_time(database: Session, direct_message_uuid: str) -> models.DirectMessage:
+    direct_message = read_direct_message(database, direct_message_uuid)
+    if direct_message:
+        send_time = datetime.now()
+        updated_at = datetime.now()
+        direct_message.send_time = send_time
+        direct_message.updated_at = updated_at
+        database.commit()
+        database.refresh(direct_message)
+
+    return direct_message
+
 def delete_direct_message(database: Session, message_uuid: str) -> models.DirectMessage:
     direct_message = read_direct_message(database, message_uuid)
     if direct_message:
