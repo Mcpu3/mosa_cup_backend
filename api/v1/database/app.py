@@ -30,6 +30,8 @@ class User(database.Model):
     boards = database.relationship("Board", back_populates="administrator")
     my_boards = database.relationship("Board", secondary="BoardMembers", back_populates="members")
     my_subboards = database.relationship("Subboard", secondary="SubboardMembers", back_populates="members")
+    sent_direct_messages = database.relationship("DirectMessage", back_populates="send_from", foreign_keys="DirectMessage.send_from_uuid")
+    received_direct_messages = database.relationship("DirectMessage", back_populates="send_to", foreign_keys="DirectMessage.send_to_uuid")
     sent_form_responses = database.relationship("FormResponse", back_populates="respondent")
 
 
@@ -40,7 +42,7 @@ class Board(database.Model):
     board_id = database.Column(database.Unicode, nullable=False)
     board_name = database.Column(database.Unicode, nullable=False)
     administrator_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
-    administrator = database.relationship("User", back_populates="boards")
+    administrator = database.relationship("User", back_populates="boards", foreign_keys=[administrator_uuid])
     members = database.relationship("User", secondary="BoardMembers", back_populates="my_boards")
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
@@ -64,13 +66,14 @@ class Subboard(database.Model):
     subboard_uuid = database.Column(database.String(48), primary_key=True)
     subboard_name = database.Column(database.Unicode, nullable=False)
     board_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), nullable=False)
+    board = database.relationship("Board", back_populates="subboards")
     members = database.relationship("User", secondary="SubboardMembers", back_populates="my_subboards")
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
 
     received_messages = database.relationship("Message", secondary="SubboardMessages", back_populates="subboards")
-    received_forms = database.relationship("Form", back_populates="subboards")
+    received_forms = database.relationship("Form", secondary="SubboardForms", back_populates="subboards")
 
 
 class SubboardMember(database.Model):
@@ -87,7 +90,7 @@ class Message(database.Model):
     board_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), nullable=True)
     board = database.relationship("Board", back_populates="received_messages")
     subboards = database.relationship("Subboard", secondary="SubboardMessages", back_populates="received_messages")
-    body = database.Column(database.String, nullable=False)
+    body = database.Column(database.Unicode, nullable=False)
     send_time = database.Column(database.DateTime, nullable=True)
     scheduled_send_time = database.Column(database.DateTime, nullable=True)
     created_at = database.Column(database.DateTime, nullable=False)
@@ -107,15 +110,16 @@ class DirectMessage(database.Model):
 
     direct_message_uuid = database.Column(database.String(48), primary_key=True)
     send_from_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
-    send_from = database.relationship("User", back_populates="sent_direct_messages")
+    send_from = database.relationship("User", back_populates="sent_direct_messages", foreign_keys=[send_from_uuid])
     send_to_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
-    send_to = database.relationship("User", back_populates="received_direct_messages")
+    send_to = database.relationship("User", back_populates="received_direct_messages", foreign_keys=[send_to_uuid])
     body = database.Column(database.Unicode, nullable=False)
     send_time = database.Column(database.DateTime, nullable=True)
     scheduled_send_time = database.Column(database.DateTime, nullable=True)
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
+
 
 class Form(database.Model):
     __tablename__ = "Forms"
@@ -133,6 +137,7 @@ class Form(database.Model):
 
     form_questions = database.relationship("FormYesNoQuestion", back_populates="form")
     form_responses = database.relationship("FormResponse", back_populates="form")
+
 
 class FormYesNoQuestion(database.Model):
     __tablename__ = "FormYesNoQuestions"
@@ -163,7 +168,7 @@ class FormResponse(database.Model):
     form_response_uuid = database.Column(database.String(48), primary_key=True)
     respondent_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
     respondent = database.relationship("User", back_populates="sent_form_responses")
-    form_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), nullable=False)
+    form_uuid = database.Column(database.String(48), database.ForeignKey("Forms.form_uuid"), nullable=False)
     form = database.relationship("Form", back_populates="form_responses")
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
