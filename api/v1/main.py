@@ -68,7 +68,7 @@ async def callback(request: Request, x_line_signature=Header()):
 
 @webhook_handler.add(FollowEvent)
 def handle_follow_event(event: FollowEvent):
-    with _get_database() as database:
+    with _get_database_with_contextmanager() as database:
         line_user = crud.create_line_user(database, event.source.user_id)
     if line_user:
         signup_url = urllib.parse.urljoin("https://aaa.bbb.ccc", f"./{line_user.line_user_uuid}")
@@ -76,8 +76,6 @@ def handle_follow_event(event: FollowEvent):
 
 @api_router.post("/signup")
 def signup(request: schemas.Signup, _request: Request, database: Session=Depends(_get_database)):
-    if (not request.username) or (not request.password):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
     user = crud.create_user(database, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -86,8 +84,6 @@ def signup(request: schemas.Signup, _request: Request, database: Session=Depends
 
 @api_router.post("/signin", response_model=schemas.Token)
 def signin(request: OAuth2PasswordRequestForm=Depends(), database: Session=Depends(_get_database)) -> schemas.Token:
-    if (not request.username) or (not request.password):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
     user = crud.read_user(database, username=request.username)
     if not user:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
@@ -145,8 +141,6 @@ def get_board(board_uuid: str, current_user: models.User=Depends(_get_current_us
 
 @api_router.post("/board")
 def post_board(request: schemas.NewBoard, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    if (not request.board_id) or (not request.board_name):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
     board = crud.create_board(database, current_user.user_uuid, request)
     if not board:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -198,8 +192,6 @@ def get_subboard(board_uuid: str, subboard_uuid: str, current_user: models.User=
 
 @api_router.post("/board/{board_uuid}/subboard")
 def post_board(board_uuid: str, request: schemas.NewSubboard, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    if not request.subboard_name:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
     subboard = crud.create_subboard(database, board_uuid, request)
     if not subboard:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
