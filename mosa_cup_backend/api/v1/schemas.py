@@ -144,8 +144,3 @@ class NewMessage(BaseModel):
     subboard_uuids: Optional[List[str]]
     body: str
     scheduled_send_time: Optional[datetime]
-
-
-class MessageFilter(BaseModel):
-    only_sent: Optional[bool]
-    only_scheduled: Optional[bool]

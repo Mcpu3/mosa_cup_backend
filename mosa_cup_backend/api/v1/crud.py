@@ -185,11 +185,11 @@ def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_
 
     return user
 
-def read_messages(database: Session, board_uuid: str, message_filter: schemas.MessageFilter) -> List[models.Message]:
+def read_messages(database: Session, board_uuid: str, only_sent: bool, only_scheduled: bool) -> List[models.Message]:
     query = database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
-    if message_filter.only_sent:
+    if only_sent:
         query = query.filter(models.Message.send_time.isnot(None))
-    if message_filter.only_scheduled:
+    if only_scheduled:
         query = query.filter(models.Message.scheduled_send_time.isnot(None))
     messages = query.all()
 
@@ -205,7 +205,7 @@ def create_message(database: Session, board_uuid: str, new_message: schemas.NewM
         message_uuid=message_uuid,
         board_uuid=board_uuid,
         body=new_message.body,
-        scheduled_send_time=new_message.scheduled_send_time,
+        # scheduled_send_time=new_message.scheduled_send_time,
         created_at=created_at
     )
     if new_message.subboard_uuids:
@@ -229,13 +229,13 @@ def delete_message(database: Session, board_uuid: str, message_uuid: str) -> mod
 
     return message
 
-def read_my_messages(database: Session, user_uuid: str, board_uuid: str, message_filter: schemas.MessageFilter) -> List[models.Message]:
+def read_my_messages(database: Session, user_uuid: str, board_uuid: str, only_sent: bool, only_scheduled: bool) -> List[models.Message]:
     query = database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
     my_subboards = read_my_subboards(database, user_uuid, board_uuid)
     query = query.filter(or_(models.Message.subboards.any(subboard_uuid=any_([my_subboard.subboard_uuid for my_subboard in my_subboards])), models.Message.subboards.is_(None)))
-    if message_filter.only_sent:
+    if only_sent:
         query = query.filter(models.Message.send_time.isnot(None))
-    if message_filter.only_scheduled:
+    if only_scheduled:
         query = query.filter(models.Message.scheduled_send_time.isnot(None))
     messages = query.all()
 
