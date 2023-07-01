@@ -130,8 +130,8 @@ class NewMySubboards(BaseModel):
 
 class Message(BaseModel):
     message_uuid: str
-    board: Optional[Board]
-    subboards: Optional[List[Subboard]]
+    board: Board
+    subboards: List[Subboard]
     body: str
     send_time: Optional[datetime]
     scheduled_send_time: Optional[datetime]
@@ -168,3 +168,69 @@ class NewDirectMessage(BaseModel):
     send_to_uuids: List[str]
     body: str
     scheduled_send_time: Optional[datetime]
+
+
+class FormYesNoQuestionResponse(BaseModel):
+    form_quetion_response_uuid: str
+    form_question_uuid: str
+    yes: bool
+    no: bool
+
+    class Config:
+        orm_mode = True
+
+
+class FormYesNoQuestion(BaseModel):
+    form_question_uuid: str
+    title: str
+    yes: str
+    no: str
+
+    class Config:
+        orm_mode = True
+
+
+class FormResponse(BaseModel):
+    form_response_uuid: str
+    respondent: User
+    form_uuid: str
+    form_question_responses: List[FormYesNoQuestionResponse]
+    
+    class Config:
+        orm_mode = True
+
+
+class Form(BaseModel):
+    form_uuid: str
+    board: Board
+    subboards: List[Subboard]
+    title: str
+    send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
+    for_questions: List[FormYesNoQuestion]
+    form_responses: List[FormResponse]
+
+    class Config:
+        orm_mode = True
+
+
+class Forms(BaseModel):
+    forms: list[Form]
+
+    class Config:
+        orm_mode = True
+
+
+class NewForm(BaseModel):
+    subboard_uuids: List[str]
+    title: str
+    scheduled_send_time: Optional[datetime]
+    form_questions: List[FormYesNoQuestion]
+
+    class Config:
+        orm_mode = True
+
+
+class NewFormResponse(BaseModel):
+    form_uuid: str
+    form_question_responses: List[FormYesNoQuestionResponse]
