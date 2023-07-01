@@ -74,7 +74,7 @@ class Message(Base):
     board_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), nullable=True)
     board = relationship("Board", back_populates="received_messages")
     subboards = relationship("Subboard", secondary="SubboardMessages", back_populates="received_messages")
-    body = Column(String, nullable=False)
+    body = Column(Unicode, nullable=False)
     send_time = Column(DateTime, nullable=True)
     scheduled_send_time = Column(DateTime, nullable=True)
     created_at = Column(DateTime, nullable=False)
@@ -87,3 +87,19 @@ class SubboardMessage(Base):
 
     subboard_uuid = Column(String(48), ForeignKey("Subboards.subboard_uuid"), primary_key=True)
     message_uuid = Column(String(48), ForeignKey("Messages.message_uuid"), primary_key=True)
+
+
+class DirectMessage(Base):
+    __tablename__ = "DirectMessages"
+
+    direct_message_uuid = Column(String(48), primary_key=True)
+    send_from_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
+    send_from = relationship("User", back_populates="sent_direct_messages")
+    send_to_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
+    send_to = relationship("User", back_populates="received_direct_messages")
+    body = Column(Unicode, nullable=False)
+    send_time = Column(DateTime, nullable=True)
+    scheduled_send_time = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)
