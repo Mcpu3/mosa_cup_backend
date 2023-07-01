@@ -238,11 +238,23 @@ def post_message(board_uuid: str, request: schemas.NewMessage, _request: Request
     message = crud.create_message(database, board_uuid, request)
     if not message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    if not message.scheduled_send_time:
+        post_multicast_message(message)
+        _ = crud.update_message_send_time(database, board_uuid, message.message_uuid)
     response = {
         "Location": urllib.parse.urljoin(_request.url._url, f"./message/{message.message_uuid}")
     }
 
     return JSONResponse(response, status.HTTP_201_CREATED)
+
+def post_multicast_message(message: schemas.Message) -> None:
+    line_user_ids = []
+    for subboard in message.subboards:
+        for member in subboard.members:
+            line_user_ids.append(member.line_user.user_id)
+    line_user_ids = list(set(line_user_ids))
+
+    line_bot_api.multicast(line_user_ids, TextSendMessage(message.body))
 
 @api_router.delete("/api/v1/board/{board_uuid}/message/{message_uuid}")
 def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):

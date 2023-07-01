@@ -215,6 +215,18 @@ def create_message(database: Session, board_uuid: str, new_message: schemas.NewM
 
     return message
 
+def update_message_send_time(database: Session, board_uuid: str, message_uuid: str) -> models.Message:
+    message = read_message(database, board_uuid, message_uuid)
+    if message:
+        send_time = datetime.now()
+        updated_at = datetime.now()
+        message.send_time = send_time
+        message.updated_at = updated_at
+        database.commit()
+        database.refresh(message)
+
+    return message
+
 def delete_message(database: Session, board_uuid: str, message_uuid: str) -> models.Message:
     message = read_message(database, board_uuid, message_uuid)
     if message:
