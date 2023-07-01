@@ -4,6 +4,8 @@
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "SECRET_KEY": "c0f108359e40857c4cf5de31826add1cb9a2a72179a30b83813a99b2feefd715",
-    "DATABASE_PASSWORD": "Ube9cc#US5BJo#Lt"
+    "DATABASE_PASSWORD": "Ube9cc#US5BJo#Lt",
+    "CHANNEL_SECRET_KEY": "9e7856421b7fdb78a1b446d0c0fa553d",
+    "CHANNEL_ACCESS_TOKEN": "2uUMnRX5bUm7eFYcE3iamPBNw1mHebXiZ0MTvp7k1MVp1VAw8tPI4/bkxYWHWZ1h1m6sxnvTw7GN+N/vkhFtQi+23Vpuap/4UhrdGz5P+Rsl9dd3MLerkM++K3omtoMpcQGJTbPfqNUJQOcKWN5pkAdB04t89/1O/w1cDnyilFU="
   }
 }

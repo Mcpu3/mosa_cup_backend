@@ -5,6 +5,7 @@
 Flask-migrate
 azure-functions
 fastapi
+line-bot-sdk
 passlib[bcrypt]
 pyodbc
 python-jose
