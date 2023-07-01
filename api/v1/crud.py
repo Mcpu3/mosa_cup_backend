@@ -9,12 +9,12 @@ from sqlalchemy.orm import Session
 from api.v1 import models, schemas
 
 
-def create_line_user(database: Session, new_line_user: schemas.NewLINEUser) -> models.LINEUser:
+def create_line_user(database: Session, user_id: str) -> models.LINEUser:
     line_user_uuid = str(uuid4())
     created_at = datetime.now()
     line_user = models.LINEUser(
         line_user_uuid=line_user_uuid,
-        user_id=new_line_user.user_id,
+        user_id=user_id,
         created_at=created_at
     )
     database.add(line_user)

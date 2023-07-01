@@ -11,9 +11,8 @@ class LINEUser(BaseModel):
     line_user_uuid: str
     user_id: str
 
-
-class NewLINEUser(BaseModel):
-    user_id: str
+    class Config:
+        orm_mode = True
 
 
 class User(BaseModel):
