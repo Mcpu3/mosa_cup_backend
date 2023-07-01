@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -125,3 +126,21 @@ class NewMyBoards(BaseModel):
 
 class NewMySubboards(BaseModel):
     new_my_subboard_uuids: List[str]
+
+
+class Message(BaseModel):
+    message_uuid: str
+    board: Optional[Board]
+    subboards: Optional[List[Subboard]]
+    body: str
+    send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
+    created_at: datetime
+    updated_at: Optional[datetime]
+    deleted: bool
+
+
+class NewMessage(BaseModel):
+    subboard_uuids: List[str]
+    body: str
+    scheduled_send_time: Optional[datetime]
