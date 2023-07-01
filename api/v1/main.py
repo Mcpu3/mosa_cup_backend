@@ -38,6 +38,14 @@ def _get_current_user(access_token: str=Depends(OAuth2PasswordBearer("/api/v1/si
     
     return user
 
+@api_router.post("/line_user", response_model=schemas.LINEUser)
+def post_line_user(request: schemas.NewLINEUser, database: Session=Depends(_get_database)) -> schemas.LINEUser:
+    line_user = crud.create_line_user(database, request)
+    if not line_user:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return line_user
+
 @api_router.post("/signup")
 def signup(request: schemas.Signup, _request: Request, database: Session=Depends(_get_database)):
     if (not request.username) or (not request.password):
@@ -78,14 +86,6 @@ def update_password(request: schemas.Password, current_user: models.User=Depends
 @api_router.post("/me/update_display_name")
 def update_display_name(request: schemas.DisplayName, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     user = crud.update_display_name(database, current_user.user_uuid, request)
-    if not user:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    
-    return status.HTTP_201_CREATED
-
-@api_router.post("/me/update_line_id")
-def update_line_id(request: schemas.LineId, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    user = crud.update_line_id(database, current_user.user_uuid, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
     
