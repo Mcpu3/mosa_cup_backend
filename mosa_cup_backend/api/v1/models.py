@@ -19,6 +19,7 @@ class User(Base):
     boards = relationship("Board", back_populates="administrator")
     my_boards = relationship("Board", secondary="BoardMembers", back_populates="members")
     my_subboards = relationship("Subboard", secondary="SubboardMembers", back_populates="members")
+    sent_form_responses = relationship("FormResponse", back_populates="respondent")
 
 
 class Board(Base):
@@ -36,6 +37,7 @@ class Board(Base):
 
     subboards = relationship("Subboard", back_populates="board")
     received_messages = relationship("Message", back_populates="board")
+    received_forms = relationship("Form", back_populates="board")
 
 
 class BoardMember(Base):
@@ -58,6 +60,7 @@ class Subboard(Base):
     deleted = Column(Boolean, default=False, nullable=False)
 
     received_messages = relationship("Message", secondary="SubboardMessages", back_populates="subboards")
+    received_forms = relationship("Form", back_populates="subboards")
 
 
 class SubboardMember(Base):
@@ -104,49 +107,64 @@ class DirectMessage(Base):
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
 
+
 class Form(Base):
     __tablename__ = "Forms"
 
-    form_uuid = Column(String(48),primary_key=True)
-    board_uuid  = Column(String,nullable=False)
-    subboard_uuid = Column(String,nullable=False)
-    title = Column(String,nullable=False)
-    send_time = Column(DateTime,nullable=False)
-    scheduled_sending_time = Column(DateTime,nullable=True)
-    created_at = Column(DateTime,nullable=False)
-    updated_at = Column(DateTime,nullable=True)
-    deleted = Column(Boolean,default=False,nullable=False)
+    form_uuid = Column(String(48), primary_key=True)
+    board_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), nullable=True)
+    board = relationship("Board", bacl_populates="received_forms")
+    subboards = relationship("Subboard", secondary="SubboardForms", back_populates="received_forms")
+    title = Column(Unicode, nullable=False)
+    send_time = Column(DateTime, nullable=True)
+    scheduled_send_time = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)
+
+    form_questions = relationship("FormYesNoQuestion", back_populates="form")
+    form_responses = relationship("FormResponse", back_populates="form")
 
 class FormYesNoQuestion(Base):
     __tablename__ = "FormYesNoQuestions"
 
-    form_question_uuid = Column(String(48),primary_key=True)
-    form_uuid = Column(String,nullable=False)
-    title = Column(String,nullable=False)
-    yes = Column(String,nullable=True)
-    no = Column(String,nullable=True)
-    created_at = Column(DateTime,nullable=False)
-    updated_at =Column(DateTime,nullable=True)
-    deleted = Column(Boolean,default=False,nullable=False)
+    form_question_uuid = Column(String(48), primary_key=True)
+    form_uuid = Column(String(48), ForeignKey("Forms.form_uuid"), nullable=False)
+    form = relationship("Form", back_populates="form_questions")
+    title = Column(Unicode, nullable=False)
+    yes = Column(Unicode, nullable=False)
+    no = Column(Unicode, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at =Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)
+
+    form_question_responses = relationship("FormYesNoQuestionResponse", back_populates="form_question")
 
 class FormResponse(Base):
     __tablename__ = "FormResponses"
 
-    form_response_uuid = Column(String(48),primary_key=True)
-    form_uuid = Column(String,nullable=False)
-    user_uuid = Column(String,nullable=False)
-    created_at = Column(DateTime,nullable=False)
-    updated_at = Column(DateTime,nullable=True)
-    deleted = Column(Boolean,default=False,nullable=False)
+    form_response_uuid = Column(String(48), primary_key=True)
+    respondent_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
+    respondent = relationship("User", back_populates="sent_form_responses")
+    form_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), nullable=False)
+    form = relationship("Form", back_populates="form_responses")
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)
 
-class FormYesNoQuestionResponses(Base):
+
+    form_question_responses = relationship("FormYesNoQuestionResponse", back_populates="form_response")
+
+class FormYesNoQuestionResponse(Base):
     __tablename__ = "FormYesNoQuestionResponses"
 
-    form_question_response_uuid = Column(String(48),primary_key=True)
-    form_response_uuid = Column(String,nullable=False)
-    form_question_uuid = Column(String,nullable=False)
-    yes = Column(Boolean,nullable=True)
-    no = Column(Boolean,nullable=True)
-    created_at = Column(DateTime,nullable=False)
-    updated_At = Column(DateTime,nullable=True)
-    deleted = Column(Boolean,default=False,nullable=False)
+    form_question_response_uuid = Column(String(48), primary_key=True)
+    form_response_uuid = Column(String(48), ForeignKey("FormResponses.form_response_uuid"), nullable=False)
+    form_response = relationship("FormResponse", back_populates="form_question_responses")
+    form_question_uuid = Column(String, ForeignKey("FormYesNoQuestions.form_question_uuid"), nullable=False)
+    form_question = relationship("FormYesNoQuestion", back_populates="form_question_responses")
+    yes = Column(Boolean, nullable=False)
+    no = Column(Boolean, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_At = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)

@@ -130,8 +130,8 @@ class NewMySubboards(BaseModel):
 
 class Message(BaseModel):
     message_uuid: str
-    board: Optional[Board]
-    subboards: Optional[List[Subboard]]
+    board: Board
+    subboards: List[Subboard]
     body: str
     send_time: Optional[datetime]
     scheduled_send_time: Optional[datetime]
@@ -169,36 +169,50 @@ class NewDirectMessage(BaseModel):
     body: str
     scheduled_send_time: Optional[datetime]
 
-class FormYesNoQuestion(BaseModel):
-    form_question_uuid: str
-    title: str
-    type: str
-    yes: str
-    no: str
 
-class FormYesNoQuestionResponses(BaseModel):
-    form_question_response_uuid: str
+class FormYesNoQuestionResponse(BaseModel):
+    form_quetion_response_uuid: str
     form_question_uuid: str
     yes: bool
     no: bool
 
+    class Config:
+        orm_mode = True
 
-class Response(BaseModel):
-    form_response_uuid: str
-    respondent: list[User]
-    question_responses: list[FormYesNoQuestionResponses]
+
+class FormYesNoQuestion(BaseModel):
+    form_question_uuid: str
+    title: str
+    yes: str
+    no: str
 
     class Config:
         orm_mode = True
+
+
+class FormResponse(BaseModel):
+    form_response_uuid: str
+    respondent: User
+    form_uuid: str
+    form_question_responses: List[FormYesNoQuestionResponse]
+    
+    class Config:
+        orm_mode = True
+
 
 class Form(BaseModel):
     form_uuid: str
+    board: Board
+    subboards: List[Subboard]
     title: str
-    questions: list[FormYesNoQuestion]
-    respnses: list[Response]
+    send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
+    for_questions: List[FormYesNoQuestion]
+    form_responses: List[FormResponse]
 
     class Config:
         orm_mode = True
+
 
 class Forms(BaseModel):
     forms: list[Form]
@@ -206,9 +220,17 @@ class Forms(BaseModel):
     class Config:
         orm_mode = True
 
+
 class NewForm(BaseModel):
+    subboard_uuids: List[str]
     title: str
-    questions: list[FormYesNoQuestion]
+    scheduled_send_time: Optional[datetime]
+    form_questions: List[FormYesNoQuestion]
 
     class Config:
         orm_mode = True
+
+
+class NewFormResponse(BaseModel):
+    form_uuid: str
+    form_question_responses: List[FormYesNoQuestionResponse]
