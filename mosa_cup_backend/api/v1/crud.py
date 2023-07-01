@@ -196,9 +196,9 @@ def read_messages(database: Session, board_uuid: str, message_filter: schemas.Me
     return messages
 
 def read_message(database: Session, board_uuid: str, message_uuid: str) -> Optional[models.Message]:
-    return database.query(models.Message).filter(and_(models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
+    return database.query(models.Message).filter(and_(models.Message.message_uuid == message_uuid, models.Message.board.has(board_uuid=board_uuid), models.Message.deleted == False))
 
-def create_message(database: Session, board_uuid: str, new_message: schemas.NewMessage):
+def create_message(database: Session, board_uuid: str, new_message: schemas.NewMessage) -> Optional[models.Message]:
     message_uuid = str(uuid4())
     created_at = datetime.now()
     message = models.Message(

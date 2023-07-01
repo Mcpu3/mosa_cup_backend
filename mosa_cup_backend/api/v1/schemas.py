@@ -143,7 +143,7 @@ class Message(BaseModel):
 class NewMessage(BaseModel):
     subboard_uuids: Optional[List[str]]
     body: str
-    schduled_send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
 
 
 class MessageFilter(BaseModel):
