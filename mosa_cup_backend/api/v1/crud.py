@@ -4,7 +4,6 @@ from uuid import uuid4
 
 from passlib.context import CryptContext
 from sqlalchemy import and_
-from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from mosa_cup_backend.api.v1 import models, schemas

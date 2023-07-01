@@ -1,5 +1,6 @@
 import os
 from typing import List
+import urllib.parse
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
@@ -7,7 +8,6 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
-import urllib.parse
 
 from mosa_cup_backend.api.v1 import crud, models, schemas
 from mosa_cup_backend.api.v1.database import LocalSession, engine
