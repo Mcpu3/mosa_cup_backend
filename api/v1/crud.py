@@ -41,7 +41,7 @@ def read_user_by_username(database: Session, username: str) -> Optional[models.U
     return database.query(models.User).filter(and_(models.User.username == username, models.User.deleted == False)).first()
 
 def read_user_by_line_user_id(database: Session, line_user_id: str) -> Optional[models.User]:
-    return database.query(models.User).filter(and_(models.User.line_user.has(user_id=line_user_id), models.User.deleted == False))
+    return database.query(models.User).filter(and_(models.User.line_user.has(user_id=line_user_id), models.User.deleted == False)).first()
 
 def create_user(database: Session, signup: schemas.Signup) -> Optional[models.User]:
     user_uuid = str(uuid4())
