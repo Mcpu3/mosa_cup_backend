@@ -366,9 +366,42 @@ def create_form_question(database: Session, form_uuid: str, new_form_question: s
 
     return form_question
 
-def read_my_forms(database: Session, user_uuid: str, board_uuid: str) -> List[models.Form]:
-    query = database.query(models.Form).filter(and_(models.Form.board_uuid == board_uuid, models.Form.deleted == False))
-    my_subboards = read_my_subboards(database, user_uuid, board_uuid)
-    forms = query.filter(models.Form.subboards.any(models.Subboard.subboard_uuid.in_([my_subboard.subboard_uuid for my_subboard in my_subboards]))).all()
+def read_my_form_responses(database: Session, user_uuid: str, form_uuid: str) -> List[models.FormResponse]:
+    return database.query(models.FormResponse).filter(and_(models.FormResponse.form_uuid == form_uuid, models.FormResponse.respondent_uuid == user_uuid, models.FormResponse.deleted == False)).all()
 
-    return forms
+def create_my_form_response(database: Session, user_uuid: str, form_uuid: str, new_my_form_response: schemas.NewMyFormResponse) -> Optional[models.FormResponse]:
+    form_response_uuid = str(uuid4())
+    created_at = datetime.now()
+    form_response = models.FormResponse(
+        form_response_uuid=form_response_uuid,
+        respondent_uuid=user_uuid,
+        form_uuid=form_uuid,
+        created_at=created_at
+    )
+    if form_response:
+        for new_form_question_response in new_my_form_response.form_question_responses:
+            form_question_response = create_form_question_response(database, form_response.form_response_uuid, new_form_question_response)
+            if form_question_response:
+                form_response.form_question_responses.append(form_question_response)
+        database.add(form_response)
+        database.commit()
+        database.refresh(form_response)
+
+    return form_response
+
+def create_form_question_response(database: Session, form_response_uuid: str, new_form_question_response: schemas.FormYesNoQuestionResponse) -> Optional[models.FormYesNoQuestionResponse]:
+    form_question_response_uuid = str(uuid4())
+    created_at = datetime.now()
+    form_question_response = models.FormYesNoQuestion(
+        form_question_response_uuid=form_question_response_uuid,
+        form_response_uuid=form_response_uuid,
+        form_question_uuid=new_form_question_response.form_question_uuid,
+        yes=new_form_question_response.yes,
+        no=new_form_question_response.no,
+        created_at=created_at
+    )
+    database.add(form_question_response)
+    database.commit()
+    database.refresh(form_question_response)
+
+    return form_question_response

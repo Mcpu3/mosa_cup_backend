@@ -339,13 +339,21 @@ def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depen
     
     return status.HTTP_200_OK
 
-@api_router.get("/board/{board_uuid}/my_forms", response_model=List[schemas.Form])
-def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
-    my_forms = crud.read_my_forms(database, current_user.user_uuid, board_uuid)
-    if not my_forms:
+@api_router.get("/board/{board_uuid}/form/{form_uuid}/my_form_responses", response_model=List[schemas.FormResponse])
+def get_my_form_responses(board_uuid: str, form_uuid, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.FormResponse]:
+    my_form_responses = crud.read_my_form_responses(database, current_user.user_uuid, form_uuid)
+    if not my_form_responses:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
-    return my_forms
+    return my_form_responses
+
+@api_router.post("/board/{board_uuid}/form/{form_uuid}/my_form_response")
+def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewMyFormResponse, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    my_form_response = crud.create_my_form_response(database, current_user.user_uuid, form_uuid, request)
+    if not my_form_response:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    
+    return status.HTTP_201_CREATED
 
 @webhook_handler.add(MessageEvent, message=TextMessage)
 def handle_message_event(event: MessageEvent):

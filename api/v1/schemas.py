@@ -231,6 +231,5 @@ class NewForm(BaseModel):
         orm_mode = True
 
 
-class NewFormResponse(BaseModel):
-    form_uuid: str
+class NewMyFormResponse(BaseModel):
     form_question_responses: List[FormYesNoQuestionResponse]
