@@ -288,11 +288,8 @@ def post_direct_message(request: schemas.NewDirectMessage, _request: Request, cu
     direct_message = crud.create_direct_message(database, current_user.user_uuid, request)
     if not direct_message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    response = {
-        "Location": urllib.parse.urljoin(_request.url._url, f"./direct_message/{direct_message.direct_message_uuid}")
-    }
 
-    return JSONResponse(response, status.HTTP_201_CREATED)
+    return status.HTTP_201_CREATED
 
 @api_router.delete("/direct_message/{direct_message_uuid}")
 def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -302,7 +299,7 @@ def delete_direct_message(direct_message_uuid: str, current_user: models.User=De
     if not direct_message.scheduled_send_time:
         post_direct_message_from_line_bot(direct_message)
     
-    return direct_message
+    return status.HTTP_200_OK
 
 def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> None:
     line_bot_api.push_message(direct_message.send_to.line_user.user_id, TextSendMessage(direct_message.body))
