@@ -378,7 +378,7 @@ def handle_message_event(event: MessageEvent):
     elif received_message == "ボード一覧":
         message = ""
         with _get_database_with_contextmanager() as database:
-            user = crud.read_user(database, line_user_id=event.source.user_id)
+            user = crud.read_user(database, user_uuid="91c3243d-8708-4a46-86ef-ada6f1d7e522")
             my_boards = crud.read_my_boards(database, user.user_uuid)
             for my_board in my_boards:
                 message += f"{my_board.board_id}: {my_board.board_name}\n"
