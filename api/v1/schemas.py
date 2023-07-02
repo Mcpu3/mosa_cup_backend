@@ -207,7 +207,7 @@ class Form(BaseModel):
     title: str
     send_time: Optional[datetime]
     scheduled_send_time: Optional[datetime]
-    for_questions: List[FormYesNoQuestion]
+    form_questions: List[FormYesNoQuestion]
     form_responses: List[FormResponse]
 
     class Config:
