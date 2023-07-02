@@ -23,12 +23,14 @@ def create_line_user(database: Session, user_id: str) -> models.LINEUser:
 
     return line_user
 
-def read_user(database: Session, user_uuid: Optional[str]=None, username: Optional[str]=None) -> Optional[models.User]:
+def read_user(database: Session, user_uuid: Optional[str]=None, username: Optional[str]=None, line_user_id: Optional[str]=None) -> Optional[models.User]:
     user = None
     if user_uuid:
         user = read_user_by_uuid(database, user_uuid)
     if username:
         user = read_user_by_username(database, username)
+    if line_user_id:
+        user = read_user_by_line_user_id(database, line_user_id)
 
     return user
 
@@ -37,6 +39,9 @@ def read_user_by_uuid(database: Session, user_uuid: str) -> Optional[models.User
 
 def read_user_by_username(database: Session, username: str) -> Optional[models.User]:
     return database.query(models.User).filter(and_(models.User.username == username, models.User.deleted == False)).first()
+
+def read_user_by_line_user_id(database: Session, line_user_id: str) -> Optional[models.User]:
+    return database.query(models.User).filter(and_(models.User.line_user.has(user_id=line_user_id), models.User.deleted == False))
 
 def create_user(database: Session, signup: schemas.Signup) -> Optional[models.User]:
     user_uuid = str(uuid4())
