@@ -381,7 +381,7 @@ def handle_message_event(event: MessageEvent):
             user = crud.read_user(database, user_uuid="91c3243d-8708-4a46-86ef-ada6f1d7e522")
             my_boards = crud.read_my_boards(database, user.user_uuid)
             for my_board in my_boards:
-                message += f"{my_board.board_id}: {my_board.board_name}\n"
+                message += f"ボードID: {my_board.board_id}, ボード名: {my_board.board_name}\n"
             line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text=message)
