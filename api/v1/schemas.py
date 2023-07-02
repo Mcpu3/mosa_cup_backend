@@ -163,7 +163,7 @@ class DirectMessage(BaseModel):
     send_time: Optional[datetime]
     scheduled_send_time: Optional[datetime]
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime]
     deleted: bool
 
     class Config:
