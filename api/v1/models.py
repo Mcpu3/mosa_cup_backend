@@ -174,7 +174,6 @@ class FormResponse(Base):
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
 
-
     form_question_responses = relationship("FormYesNoQuestionResponse", back_populates="form_response")
 
 class FormYesNoQuestionResponse(Base):
