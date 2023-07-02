@@ -350,7 +350,7 @@ def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current
     
     return my_forms
 
-@webhook_handler.post(MessageEvent, message=TextMessage)
+@webhook_handler.add(MessageEvent, message=TextMessage)
 def handle_message_event(event: MessageEvent):
     if event.message.text.startswith("サインイン"):
         signin_url = "https://aaa.bbb.ccc"
