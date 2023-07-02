@@ -377,14 +377,15 @@ def handle_message_event(event: MessageEvent):
         )
     elif received_message == "ボード一覧":
         message = ""
-        user = crud.read_user(database, line_user_id=event.source.user_id)
-        my_boards = crud.read_my_boards(database, user.user_uuid)
-        for my_board in my_boards:
-            message += f"{my_board.board_id}: {my_board.board_name}\n"
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text=message)
-        )
+        with _get_database_with_contextmanager() as database:
+            user = crud.read_user(database, line_user_id=event.source.user_id)
+            my_boards = crud.read_my_boards(database, user.user_uuid)
+            for my_board in my_boards:
+                message += f"{my_board.board_id}: {my_board.board_name}\n"
+            line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=message)
+            )
     elif received_message == "DM":
         line_bot_api.reply_message(
             event.reply_token,
