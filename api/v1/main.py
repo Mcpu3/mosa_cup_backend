@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from api.v1 import crud, models, schemas
 from api.v1.database import LocalSession, engine
+from api.v1.LINEbot import create_rich_menu
 
 
 models.Base.metadata.create_all(engine)
@@ -26,6 +27,11 @@ CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
 
 line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
 webhook_handler = WebhookHandler(CHANNEL_SECRET_KEY)
+
+rich_menu_id = line_bot_api.create_rich_menu(rich_menu=create_rich_menu.create_rich_menu())
+with open("./api/v1/LINEbot/menu_image.jpg", "rb") as f:
+    line_bot_api.set_rich_menu_image(rich_menu_id, "image/jpeg", f)
+line_bot_api.set_default_rich_menu(rich_menu_id=rich_menu_id)
 
 def _get_database():
     database = LocalSession()
@@ -357,13 +363,29 @@ def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewM
 
 @webhook_handler.add(MessageEvent, message=TextMessage)
 def handle_message_event(event: MessageEvent):
-    if event.message.text.startswith("サインイン"):
+    received_message = event.message.text
+    if received_message.startwiths ("サインイン"):
         signin_url = "https://aaa.bbb.ccc"
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(f"{signin_url}からサインインしてね!")
         )
-    if event.message.text.startswith("ボードに入る"):
+    elif received_message == "ロール変更":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text='手順に従って変更を行ってください')
+        )
+    elif received_message == "予定確認":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text='実装予定の機能です')
+        )
+    elif received_message == "DM":
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text='DMはこちらから送信してください')
+        ) 
+    elif event.message.text.startswith("ボードに入る"):
         new_my_board_uuid = event.message.text.split()[1]
         with _get_database_with_contextmanager() as database:
             user = crud.read_user(line_user_id=event.source.user_id)
@@ -375,3 +397,10 @@ def handle_message_event(event: MessageEvent):
                     new_my_board_uuids=new_my_board_uuids
                 )
                 user = crud.update_my_boards(database, user.user_uuid, new_my_boards)
+    else:
+        #ボード参加かもしれないから、crudでボード検索して合致したらurl、それ以外はこれって感じがいいかも
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(text='操作はメニューから行ってください')
+        )
+    
