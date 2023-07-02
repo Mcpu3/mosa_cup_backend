@@ -365,7 +365,7 @@ def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewM
 def handle_message_event(event: MessageEvent):
     received_message = event.message.text
     if received_message == "サインイン":
-        signin_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signin"
+        signin_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/login"
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(f"{signin_url} からサインインしてね!")
