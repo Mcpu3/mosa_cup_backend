@@ -365,7 +365,7 @@ def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewM
 def handle_message_event(event: MessageEvent):
     received_message = event.message.text
     if received_message == "サインイン":
-        signin_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signup"
+        signin_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signin"
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(f"{signin_url} からサインインしてね!")
@@ -375,10 +375,15 @@ def handle_message_event(event: MessageEvent):
             event.reply_token,
             TextSendMessage(text='手順に従って変更を行ってください')
         )
-    elif received_message == "予定確認":
+    elif received_message == "ボード一覧":
+        message = ""
+        user = crud.read_user(database, line_user_id=event.source.user_id)
+        my_boards = crud.read_my_boards(database, user.user_uuid)
+        for my_board in my_boards:
+            message += f"{my_board.board_id}: {my_board.board_name}\n"
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text='実装予定の機能です')
+            TextSendMessage(text=message)
         )
     elif received_message == "DM":
         line_bot_api.reply_message(
