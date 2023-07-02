@@ -77,10 +77,10 @@ def handle_follow_event(event: FollowEvent):
     with _get_database_with_contextmanager() as database:
         line_user = crud.create_line_user(database, event.source.user_id)
     if line_user:
-        signup_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/participant/signup?line_user_uuid={line_user.line_user_uuid}"
+        signup_url = f"https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signup?line_user_uuid={line_user.line_user_uuid}"
         line_bot_api.push_message(
             event.source.user_id,
-            TextSendMessage(f"{signup_url}からサインアップしてね!")
+            TextSendMessage(f"{signup_url} からサインアップしてね!")
         )
 
 @api_router.post("/signup")
@@ -364,11 +364,11 @@ def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewM
 @webhook_handler.add(MessageEvent, message=TextMessage)
 def handle_message_event(event: MessageEvent):
     received_message = event.message.text
-    if received_message.startwiths ("サインイン"):
-        signin_url = "https://aaa.bbb.ccc"
+    if received_message == "サインイン":
+        signin_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signup"
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(f"{signin_url}からサインインしてね!")
+            TextSendMessage(f"{signin_url} からサインインしてね!")
         )
     elif received_message == "ロール変更":
         line_bot_api.reply_message(
