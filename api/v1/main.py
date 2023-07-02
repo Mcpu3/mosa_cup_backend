@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import FollowEvent, TextSendMessage
+from linebot.models import FollowEvent, MessageEvent, TextMessage, TextSendMessage
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -72,7 +72,10 @@ def handle_follow_event(event: FollowEvent):
         line_user = crud.create_line_user(database, event.source.user_id)
     if line_user:
         signup_url = urllib.parse.urljoin("https://aaa.bbb.ccc", f"./{line_user.line_user_uuid}")
-        line_bot_api.push_message(event.source.user_id, TextSendMessage(f"{signup_url}からサインアップしてね!"))
+        line_bot_api.push_message(
+            event.source.user_id,
+            TextSendMessage(f"{signup_url}からサインアップしてね!")
+        )
 
 @api_router.post("/signup")
 def signup(request: schemas.Signup, _request: Request, database: Session=Depends(_get_database)):
@@ -346,3 +349,24 @@ def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current
         raise HTTPException(status.HTTP_204_NO_CONTENT)
     
     return my_forms
+
+@webhook_handler.post(MessageEvent, message=TextMessage)
+def handle_message_event(event: MessageEvent):
+    if event.message.text.startswith("サインイン"):
+        signin_url = "https://aaa.bbb.ccc"
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(f"{signin_url}からサインインしてね!")
+        )
+    if event.message.text.startswith("ボードに入る"):
+        new_my_board_uuid = event.message.text.split()[1]
+        with _get_database_with_contextmanager() as database:
+            user = crud.read_user(line_user_id=event.source.user_id)
+            if user:
+                my_boards = crud.read_my_boards(database, user.user_uuid)
+                new_my_board_uuids = [my_board.board_uuid for my_board in my_boards]
+                new_my_board_uuids.append(new_my_board_uuid)
+                new_my_boards = schemas.NewMyBoards(
+                    new_my_board_uuids=new_my_board_uuids
+                )
+                user = crud.update_my_boards(database, user.user_uuid, new_my_boards)
