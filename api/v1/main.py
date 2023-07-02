@@ -71,7 +71,7 @@ def handle_follow_event(event: FollowEvent):
     with _get_database_with_contextmanager() as database:
         line_user = crud.create_line_user(database, event.source.user_id)
     if line_user:
-        signup_url = urllib.parse.urljoin("https://aaa.bbb.ccc", f"./{line_user.line_user_uuid}")
+        signup_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/participant/signup?line_user_uuid={line_user.line_user_uuid}"
         line_bot_api.push_message(
             event.source.user_id,
             TextSendMessage(f"{signup_url}からサインアップしてね!")
