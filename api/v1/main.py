@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 import os
-from typing import List
+from typing import List, Tuple
 import urllib.parse
 
 from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
@@ -8,30 +8,18 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import FollowEvent, MessageEvent, TextMessage, TextSendMessage
+from linebot.models import FollowEvent, MessageAction, MessageEvent, RichMenu, RichMenuArea, RichMenuBounds, RichMenuSize, TextMessage, TextSendMessage
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 from api.v1 import crud, models, schemas
 from api.v1.database import LocalSession, engine
-from api.v1.LINEbot import create_rich_menu
 
 
 models.Base.metadata.create_all(engine)
 
 api_router = APIRouter()
-
-CHANNEL_SECRET_KEY = os.getenv("CHANNEL_SECRET_KEY")
-CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
-
-line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
-webhook_handler = WebhookHandler(CHANNEL_SECRET_KEY)
-
-rich_menu_id = line_bot_api.create_rich_menu(rich_menu=create_rich_menu.create_rich_menu())
-with open("./api/v1/LINEbot/menu_image.jpg", "rb") as f:
-    line_bot_api.set_rich_menu_image(rich_menu_id, "image/jpeg", f)
-line_bot_api.set_default_rich_menu(rich_menu_id=rich_menu_id)
 
 def _get_database():
     database = LocalSession()
@@ -62,17 +50,58 @@ def _get_current_user(access_token: str=Depends(OAuth2PasswordBearer("/api/v1/si
 
     return user
 
+def init_line_bot_api() -> Tuple[LineBotApi, WebhookHandler]:
+    CHANNEL_SECRET_KEY = os.getenv("CHANNEL_SECRET_KEY")
+    CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
+
+    line_bot_api = LineBotApi(CHANNEL_ACCESS_TOKEN)
+    web_hook_handler = WebhookHandler(CHANNEL_SECRET_KEY)
+
+    rich_menu_id = line_bot_api.create_rich_menu(
+        RichMenu(
+            size=RichMenuSize(width=2500, height=1686),
+            selected=True,
+            name="リッチメニュー",
+            chat_bar_text="メニュー",
+            areas=[
+                RichMenuArea(
+                    bounds=RichMenuBounds(x=0, y=0, width=1250, height=843),
+                    action=MessageAction(label="サインアップ", text="サインアップ")
+                ),
+                RichMenuArea(
+                    bounds=RichMenuBounds(x=0, y=843, width=1250, height=843),
+                    action=MessageAction(label="ボード設定", text="ボード設定")
+                ),
+                RichMenuArea(
+                    bounds=RichMenuBounds(x=1250, y=843, width=1250, height=843),
+                    action=MessageAction(label="サブボード設定", text="サブボード設定")
+                ),
+                RichMenuArea(
+                    bounds=RichMenuBounds(x=1250, y=0, width=1250, height=843),
+                    action=MessageAction(label="DM", text="DM")
+                )
+            ]
+        )
+    )
+    with open("./api/v1/assets/rich_menu.png", "rb") as f:
+        line_bot_api.set_rich_menu_image(rich_menu_id, "image/png", f)
+        line_bot_api.set_default_rich_menu(rich_menu_id)
+
+    return line_bot_api, web_hook_handler
+
+line_bot_api, web_hook_handler = init_line_bot_api()
+
 @api_router.post("/callback", tags=["LINE"])
 async def callback(request: Request, x_line_signature=Header()):
     body = await request.body()
     try:
-        webhook_handler.handle(body.decode("utf-8"), x_line_signature)
+        web_hook_handler.handle(body.decode("utf-8"), x_line_signature)
     except InvalidSignatureError:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
     return status.HTTP_200_OK
 
-@webhook_handler.add(FollowEvent)
+@web_hook_handler.add(FollowEvent)
 def handle_follow_event(event: FollowEvent):
     with _get_database_with_contextmanager() as database:
         line_user = crud.read_line_user(database, event.source.user_id)
@@ -83,13 +112,13 @@ def handle_follow_event(event: FollowEvent):
             if user:
                 line_bot_api.push_message(
                     event.source.user_id,
-                    f"Signed in at {user.display_name if user.display_name else user.username}."
+                    f"{user.display_name if user.display_name else user.username}さんでサインインしました。"
                 )
             else:
                 signup_url = f"https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signup?line_user_uuid={line_user.line_user_uuid}"
                 line_bot_api.push_message(
                     event.source.user_id,
-                    f"Sign up at {signup_url}."
+                    f"{signup_url} でサインアップします。"
                 )
 
 @api_router.post("/signup", tags=["users"])
@@ -370,7 +399,7 @@ def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewM
 
     return status.HTTP_201_CREATED
 
-@webhook_handler.add(MessageEvent, message=TextMessage)
+@web_hook_handler.add(MessageEvent, message=TextMessage)
 def handle_message_event(event: MessageEvent):
     received_message = event.message.text
     if received_message == "サインイン":
