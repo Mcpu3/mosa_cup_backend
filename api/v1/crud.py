@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from api.v1 import models, schemas
 
 
+def read_line_user(database: Session, user_id: str) -> models.LINEUser:
+    return database.query(models.LINEUser).filter(and_(models.LINEUser.user_id == user_id, models.LINEUser.deleted == False)).first()
+
 def create_line_user(database: Session, user_id: str) -> models.LINEUser:
     line_user_uuid = str(uuid4())
     created_at = datetime.now()
@@ -23,12 +26,14 @@ def create_line_user(database: Session, user_id: str) -> models.LINEUser:
 
     return line_user
 
-def read_user(database: Session, user_uuid: Optional[str]=None, username: Optional[str]=None, line_user_id: Optional[str]=None) -> Optional[models.User]:
+def read_user(database: Session, user_uuid: Optional[str]=None, user_id: Optional[str]=None, username: Optional[str]=None, line_user_id: Optional[str]=None) -> Optional[models.User]:
     user = None
     if user_uuid:
         user = read_user_by_uuid(database, user_uuid)
+    if user_id:
+        user = read_user_by_id(database, user_id)
     if username:
-        user = read_user_by_username(database, username)
+        user = read_user_by_name(database, username)
     if line_user_id:
         user = read_user_by_line_user_id(database, line_user_id)
 
@@ -37,7 +42,10 @@ def read_user(database: Session, user_uuid: Optional[str]=None, username: Option
 def read_user_by_uuid(database: Session, user_uuid: str) -> Optional[models.User]:
     return database.query(models.User).filter(and_(models.User.user_uuid == user_uuid, models.User.deleted == False)).first()
 
-def read_user_by_username(database: Session, username: str) -> Optional[models.User]:
+def read_user_by_id(database: Session, user_id: str) -> Optional[models.User]:
+    return database.query(models.User).filter(and_(models.User.user_id == user_id, models.User.deleted == False)).first()
+
+def read_user_by_name(database: Session, username: str) -> Optional[models.User]:
     return database.query(models.User).filter(and_(models.User.username == username, models.User.deleted == False)).first()
 
 def read_user_by_line_user_id(database: Session, line_user_id: str) -> Optional[models.User]:
@@ -49,6 +57,7 @@ def create_user(database: Session, signup: schemas.Signup) -> Optional[models.Us
     created_at = datetime.now()
     user = models.User(
         user_uuid=user_uuid,
+        user_id=signup.user_id,
         username=signup.username,
         hashed_password=hashed_password,
         created_at=created_at
