@@ -160,3 +160,6 @@ cython_debug/
 #.idea/
 
 .python_packages
+
+*.xcf
+*.svg
