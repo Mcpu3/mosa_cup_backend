@@ -19,7 +19,7 @@ class LINEUser(database.Model):
     __tablename__ = "LINEUsers"
 
     line_user_uuid = database.Column(database.String(48), primary_key=True)
-    user_id = database.Column(database.Unicode, nullable=False)
+    user_id = database.Column(database.String(48), unique=True, nullable=False)
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
@@ -29,6 +29,7 @@ class User(database.Model):
     __tablename__ = "Users"
 
     user_uuid = database.Column(database.String(48), primary_key=True)
+    user_id = database.Column(database.String(48), unique=True, nullable=False)
     username = database.Column(database.String(48), unique=True, nullable=False)
     hashed_password = database.Column(database.Unicode, nullable=False)
     display_name = database.Column(database.Unicode, nullable=True)
@@ -50,7 +51,7 @@ class Board(database.Model):
     __tablename__ = "Boards"
 
     board_uuid = database.Column(database.String(48), primary_key=True)
-    board_id = database.Column(database.Unicode, nullable=False)
+    board_id = database.Column(database.String(48), unique=True, nullable=False)
     board_name = database.Column(database.Unicode, nullable=False)
     administrator_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
     administrator = database.relationship("User", back_populates="boards", foreign_keys=[administrator_uuid])
