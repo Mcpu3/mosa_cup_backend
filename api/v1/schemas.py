@@ -17,6 +17,7 @@ class LINEUser(BaseModel):
 
 class User(BaseModel):
     user_uuid: str
+    user_id: str
     username: str
     display_name: Optional[str]
     line_user: Optional[LINEUser]
@@ -26,6 +27,7 @@ class User(BaseModel):
 
 
 class Signup(BaseModel):
+    user_id: str
     username: str
     password: str
     line_user_uuid: Optional[str]
@@ -195,7 +197,7 @@ class FormResponse(BaseModel):
     respondent: User
     form_uuid: str
     form_question_responses: List[FormYesNoQuestionResponse]
-    
+
     class Config:
         orm_mode = True
 

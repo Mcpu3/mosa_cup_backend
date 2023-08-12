@@ -8,7 +8,7 @@ class LINEUser(Base):
     __tablename__ = "LINEUsers"
 
     line_user_uuid = Column(String(48), primary_key=True)
-    user_id = Column(Unicode, nullable=False)
+    user_id = Column(String(48), unique=True, nullable=False)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
@@ -18,6 +18,7 @@ class User(Base):
     __tablename__ = "Users"
 
     user_uuid = Column(String(48), primary_key=True)
+    user_id = Column(String(48), unique=True, nullable=False)
     username = Column(String(48), unique=True, nullable=False)
     hashed_password = Column(Unicode, nullable=False)
     display_name = Column(Unicode, nullable=True)
@@ -39,7 +40,7 @@ class Board(Base):
     __tablename__ = "Boards"
 
     board_uuid = Column(String(48), primary_key=True)
-    board_id = Column(Unicode, nullable=False)
+    board_id = Column(String(48), unique=True, nullable=False)
     board_name = Column(Unicode, nullable=False)
     administrator_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
     administrator = relationship("User", back_populates="boards", foreign_keys=[administrator_uuid])
