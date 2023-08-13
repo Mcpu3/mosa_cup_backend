@@ -9,10 +9,10 @@ from sqlalchemy.orm import Session
 from api.v1 import models, schemas
 
 
-def read_line_user(database: Session, user_id: str) -> models.LINEUser:
+def read_line_user(database: Session, user_id: str) -> Optional[models.LINEUser]:
     return database.query(models.LINEUser).filter(and_(models.LINEUser.user_id == user_id, models.LINEUser.deleted == False)).first()
 
-def create_line_user(database: Session, user_id: str) -> models.LINEUser:
+def create_line_user(database: Session, user_id: str) -> Optional[models.LINEUser]:
     line_user_uuid = str(uuid4())
     created_at = datetime.now()
     line_user = models.LINEUser(
@@ -70,8 +70,8 @@ def create_user(database: Session, signup: schemas.Signup) -> Optional[models.Us
 
     return user
 
-def update_password(database: Session, user_uuid: str, password: schemas.Password) -> Optional[models.User]:
-    user = read_user(database, user_uuid=user_uuid)
+def update_password(database: Session, username: str, password: schemas.Password) -> Optional[models.User]:
+    user = read_user(database, username=username)
     if user:
         hashed_password = CryptContext(["bcrypt"]).hash(password.new_password)
         updated_at = datetime.now()
@@ -82,8 +82,8 @@ def update_password(database: Session, user_uuid: str, password: schemas.Passwor
 
     return user
 
-def update_display_name(database: Session, user_uuid: str, display_name: schemas.DisplayName) -> Optional[models.User]:
-    user = read_user(database, user_uuid=user_uuid)
+def update_display_name(database: Session, username: str, display_name: schemas.DisplayName) -> Optional[models.User]:
+    user = read_user(database, username=username)
     if user:
         updated_at = datetime.now()
         user.display_name = display_name.new_display_name
@@ -93,8 +93,8 @@ def update_display_name(database: Session, user_uuid: str, display_name: schemas
 
     return user
 
-def delete_user(database: Session, user_uuid: str) -> Optional[models.User]:
-    user = read_user(database, user_uuid=user_uuid)
+def delete_user(database: Session, username: str) -> Optional[models.User]:
+    user = read_user(database, username=username)
     if user:
         updated_at = datetime.now()
         user.updated_at = updated_at
@@ -107,7 +107,7 @@ def delete_user(database: Session, user_uuid: str) -> Optional[models.User]:
 def read_boards(database: Session, username: str) -> List[models.Board]:
     return database.query(models.Board).filter(and_(models.Board.administrator_name == username, models.Board.deleted == False)).all()
 
-def read_board(database: Session, board_uuid: Optional[str], board_id: Optional[str]) -> Optional[models.Board]:
+def read_board(database: Session, board_uuid: Optional[str]=None, board_id: Optional[str]=None) -> Optional[models.Board]:
     board = None
     if board_uuid:
         board = read_board_by_uuid(database, board_uuid)
@@ -241,7 +241,7 @@ def create_message(database: Session, board_uuid: str, new_message: schemas.NewM
 
     return message
 
-def update_message_send_time(database: Session, board_uuid: str, message_uuid: str) -> models.Message:
+def update_message_send_time(database: Session, board_uuid: str, message_uuid: str) -> Optional[models.Message]:
     message = read_message(database, board_uuid, message_uuid)
     if message:
         send_time = datetime.now()
@@ -253,7 +253,7 @@ def update_message_send_time(database: Session, board_uuid: str, message_uuid: s
 
     return message
 
-def delete_message(database: Session, board_uuid: str, message_uuid: str) -> models.Message:
+def delete_message(database: Session, board_uuid: str, message_uuid: str) -> Optional[models.Message]:
     message = read_message(database, board_uuid, message_uuid)
     if message:
         updated_at = datetime.now()
@@ -297,7 +297,7 @@ def create_direct_message(database: Session, username: str, new_direct_message: 
 
     return direct_messages
 
-def update_direct_message_send_time(database: Session, direct_message_uuid: str) -> models.DirectMessage:
+def update_direct_message_send_time(database: Session, direct_message_uuid: str) -> Optional[models.DirectMessage]:
     direct_message = read_direct_message(database, direct_message_uuid)
     if direct_message:
         send_time = datetime.now()
@@ -309,7 +309,7 @@ def update_direct_message_send_time(database: Session, direct_message_uuid: str)
 
     return direct_message
 
-def delete_direct_message(database: Session, message_uuid: str) -> models.DirectMessage:
+def delete_direct_message(database: Session, message_uuid: str) -> Optional[models.DirectMessage]:
     direct_message = read_direct_message(database, message_uuid)
     if direct_message:
         updated_at = datetime.now()
@@ -356,7 +356,7 @@ def create_form(database: Session, board_uuid: str, new_form: schemas.NewForm) -
 
     return form
 
-def delete_form(database: Session, board_uuid: str, form_uuid: str) -> models.Form:
+def delete_form(database: Session, board_uuid: str, form_uuid: str) -> Optional[models.Form]:
     form = read_form(database, board_uuid, form_uuid)
     if form:
         updated_at = datetime.now()
