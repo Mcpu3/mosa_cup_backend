@@ -129,7 +129,7 @@ class MySubboardWithBoard(BaseModel):
 
 
 class NewMyBoards(BaseModel):
-    new_my_board_uuids: List[str]
+    new_my_board_ids: List[str]
 
 
 class NewMySubboards(BaseModel):

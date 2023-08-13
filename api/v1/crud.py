@@ -107,10 +107,22 @@ def delete_user(database: Session, user_uuid: str) -> Optional[models.User]:
 def read_boards(database: Session, username: str) -> List[models.Board]:
     return database.query(models.Board).filter(and_(models.Board.administrator_name == username, models.Board.deleted == False)).all()
 
-def read_board(database: Session, board_uuid: str) -> models.Board:
+def read_board(database: Session, board_uuid: Optional[str], board_id: Optional[str]) -> Optional[models.Board]:
+    board = None
+    if board_uuid:
+        board = read_board_by_uuid(database, board_uuid)
+    if board_id:
+        board = read_board_by_id(database, board_id)
+
+    return board
+
+def read_board_by_uuid(database: Session, board_uuid: str) -> Optional[models.Board]:
     return database.query(models.Board).filter(and_(models.Board.board_uuid == board_uuid, models.Board.deleted == False)).first()
 
-def create_board(database: Session, username: str, new_board: schemas.NewBoard) -> models.Board:
+def read_board_by_id(database: Session, board_id: str) -> Optional[models.Board]:
+    return database.query(models.Board).filter(and_(models.Board.board_id == board_id, models.Board.deleted == False)).first()
+
+def create_board(database: Session, username: str, new_board: schemas.NewBoard) -> Optional[models.Board]:
     board_uuid = str(uuid4())
     created_at = datetime.now()
     board = models.Board(
@@ -127,7 +139,7 @@ def create_board(database: Session, username: str, new_board: schemas.NewBoard) 
     return board
 
 def delete_board(database: Session, board_uuid: str) -> Optional[models.Board]:
-    board = read_board(database, board_uuid)
+    board = read_board(database, board_uuid=board_uuid)
     if board:
         updated_at = datetime.now()
         board.updated_at = updated_at
@@ -147,8 +159,8 @@ def update_my_boards(database: Session, username: str, new_my_boards: schemas.Ne
     user = read_user(database, username=username)
     if user:
         user.my_boards.clear()
-        for new_my_board_uuid in new_my_boards.new_my_board_uuids:
-            board = read_board(database, new_my_board_uuid)
+        for new_my_board_id in new_my_boards.new_my_board_ids:
+            board = read_board_by_id(database, board_id=new_my_board_id)
             if board:
                 user.my_boards.append(board)
         database.commit()
