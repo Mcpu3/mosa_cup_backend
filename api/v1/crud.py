@@ -3,7 +3,7 @@ from typing import List, Optional
 from uuid import uuid4
 
 from passlib.context import CryptContext
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from api.v1 import models, schemas
@@ -104,20 +104,20 @@ def delete_user(database: Session, user_uuid: str) -> Optional[models.User]:
 
     return user
 
-def read_boards(database: Session, user_uuid: str) -> List[models.Board]:
-    return database.query(models.Board).filter(and_(models.Board.administrator_uuid == user_uuid, models.Board.deleted == False)).all()
+def read_boards(database: Session, username: str) -> List[models.Board]:
+    return database.query(models.Board).filter(and_(models.Board.administrator_name == username, models.Board.deleted == False)).all()
 
 def read_board(database: Session, board_uuid: str) -> models.Board:
     return database.query(models.Board).filter(and_(models.Board.board_uuid == board_uuid, models.Board.deleted == False)).first()
 
-def create_board(database: Session, user_uuid: str, new_board: schemas.NewBoard) -> models.Board:
+def create_board(database: Session, username: str, new_board: schemas.NewBoard) -> models.Board:
     board_uuid = str(uuid4())
     created_at = datetime.now()
     board = models.Board(
         board_uuid=board_uuid,
         board_id=new_board.board_id,
         board_name=new_board.board_name,
-        administrator_uuid=user_uuid,
+        administrator_name=username,
         created_at=created_at
     )
     database.add(board)
@@ -140,11 +140,11 @@ def delete_board(database: Session, board_uuid: str) -> Optional[models.Board]:
 
     return board
 
-def read_my_boards(database: Session, user_uuid: str) -> List[models.Board]:
-    return database.query(models.Board).filter(and_(models.Board.members.any(user_uuid=user_uuid), models.Board.deleted == False)).all()
+def read_my_boards(database: Session, username: str) -> List[models.Board]:
+    return database.query(models.Board).filter(and_(models.Board.members.any(username=username), models.Board.deleted == False)).all()
 
-def update_my_boards(database: Session, user_uuid: str, new_my_boards: schemas.NewMyBoards) -> Optional[schemas.User]:
-    user = read_user(database, user_uuid=user_uuid)
+def update_my_boards(database: Session, username: str, new_my_boards: schemas.NewMyBoards) -> Optional[schemas.User]:
+    user = read_user(database, username=username)
     if user:
         user.my_boards.clear()
         for new_my_board_uuid in new_my_boards.new_my_board_uuids:
@@ -188,11 +188,11 @@ def delete_subboard(database: Session, board_uuid: str, subboard_uuid: str) -> O
 
     return subboard
 
-def read_my_subboards(database: Session, user_uuid: str, board_uuid: str) -> List[models.Subboard]:
-    return database.query(models.Subboard).filter(and_(models.Subboard.board_uuid == board_uuid, models.Subboard.members.any(user_uuid=user_uuid), models.Subboard.deleted == False)).all()
+def read_my_subboards(database: Session, username: str, board_uuid: str) -> List[models.Subboard]:
+    return database.query(models.Subboard).filter(and_(models.Subboard.board_uuid == board_uuid, models.Subboard.members.any(username=username), models.Subboard.deleted == False)).all()
 
-def update_my_subboards(database: Session, user_uuid: str, board_uuid: str, new_my_subboards: schemas.NewMySubboards) -> Optional[schemas.User]:
-    user = read_user(database, user_uuid=user_uuid)
+def update_my_subboards(database: Session, username: str, board_uuid: str, new_my_subboards: schemas.NewMySubboards) -> Optional[schemas.User]:
+    user = read_user(database, username=username)
     if user:
         user.my_subboards = [my_subboard for my_subboard in user.my_subboards if my_subboard.board_uuid != board_uuid]
         for new_my_subboard_uuid in new_my_subboards.new_my_subboard_uuids:
@@ -252,28 +252,28 @@ def delete_message(database: Session, board_uuid: str, message_uuid: str) -> mod
 
     return message
 
-def read_my_messages(database: Session, user_uuid: str, board_uuid: str) -> List[models.Message]:
+def read_my_messages(database: Session, username: str, board_uuid: str) -> List[models.Message]:
     query = database.query(models.Message).filter(and_(models.Message.board_uuid == board_uuid, models.Message.deleted == False))
-    my_subboards = read_my_subboards(database, user_uuid, board_uuid)
+    my_subboards = read_my_subboards(database, username, board_uuid)
     messages = query.filter(models.Message.subboards.any(models.Subboard.subboard_uuid.in_([my_subboard.subboard_uuid for my_subboard in my_subboards]))).all()
 
     return messages
 
-def read_direct_messages(database: Session, user_uuid: str) -> List[models.DirectMessage]:
-    return database.query(models.DirectMessage).filter(and_(models.DirectMessage.send_from.has(user_uuid=user_uuid), models.DirectMessage.deleted == False)).all()
+def read_direct_messages(database: Session, username: str) -> List[models.DirectMessage]:
+    return database.query(models.DirectMessage).filter(and_(or_(models.DirectMessage.send_from.has(username=username), models.DirectMessage.send_to.has(username=username)), models.DirectMessage.deleted == False)).all()
 
 def read_direct_message(database: Session, direct_message_uuid: str) -> Optional[models.DirectMessage]:
     return database.query(models.DirectMessage).filter(and_(models.DirectMessage.direct_message_uuid == direct_message_uuid, models.Message.deleted == False)).first()
 
-def create_direct_message(database: Session, user_uuid: str, new_direct_message: schemas.NewDirectMessage) -> Optional[models.DirectMessage]:
+def create_direct_message(database: Session, username: str, new_direct_message: schemas.NewDirectMessage) -> Optional[models.DirectMessage]:
     direct_messages = []
-    for send_to_uuid in new_direct_message.send_to_uuids:
+    for send_to_name in new_direct_message.send_to_names:
         direct_message_uuid = str(uuid4())
         created_at = datetime.now()
         direct_message = models.DirectMessage(
             direct_message_uuid=direct_message_uuid,
-            send_from_uuid=user_uuid,
-            send_to_uuid=send_to_uuid,
+            send_from_name=username,
+            send_to_name=send_to_name,
             body=new_direct_message.body,
             scheduled_send_time=new_direct_message.scheduled_send_time,
             created_at=created_at
@@ -308,8 +308,8 @@ def delete_direct_message(database: Session, message_uuid: str) -> models.Direct
 
     return direct_message
 
-def read_my_direct_messages(database: Session, user_uuid: str) -> List[models.DirectMessage]:
-    return database.query(models.DirectMessage).filter(and_(models.DirectMessage.send_to_uuid == user_uuid, models.DirectMessage.deleted == False)).all()
+def read_my_direct_messages(database: Session, username: str) -> List[models.DirectMessage]:
+    return database.query(models.DirectMessage).filter(and_(models.DirectMessage.send_from.has(username=username), models.DirectMessage.deleted == False)).all()
 
 def read_forms(database: Session, board_uuid: str) -> List[models.Form]:
     return database.query(models.Form).filter(and_(models.Form.board_uuid == board_uuid, models.Form.deleted == False)).all()
@@ -375,15 +375,15 @@ def create_form_question(database: Session, form_uuid: str, new_form_question: s
 
     return form_question
 
-def read_my_form_responses(database: Session, user_uuid: str, form_uuid: str) -> List[models.FormResponse]:
-    return database.query(models.FormResponse).filter(and_(models.FormResponse.form_uuid == form_uuid, models.FormResponse.respondent_uuid == user_uuid, models.FormResponse.deleted == False)).all()
+def read_my_form_responses(database: Session, username: str, form_uuid: str) -> List[models.FormResponse]:
+    return database.query(models.FormResponse).filter(and_(models.FormResponse.form_uuid == form_uuid, models.FormResponse.respondent_name == username, models.FormResponse.deleted == False)).all()
 
-def create_my_form_response(database: Session, user_uuid: str, form_uuid: str, new_my_form_response: schemas.NewMyFormResponse) -> Optional[models.FormResponse]:
+def create_my_form_response(database: Session, username: str, form_uuid: str, new_my_form_response: schemas.NewMyFormResponse) -> Optional[models.FormResponse]:
     form_response_uuid = str(uuid4())
     created_at = datetime.now()
     form_response = models.FormResponse(
         form_response_uuid=form_response_uuid,
-        respondent_uuid=user_uuid,
+        respondent_name=username,
         form_uuid=form_uuid,
         created_at=created_at
     )
