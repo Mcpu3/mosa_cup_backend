@@ -288,7 +288,7 @@ def get_available_subboards(board_uuid: str, current_user: models.User=Depends(_
     board = crud.read_board(database, board_uuid=board_uuid)
     if not board:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
-    if board.administrator.username != current_user.username:
+    if current_user not in board.members:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     available_subboards = crud.read_subboards(database, board_uuid)
     if not available_subboards:
