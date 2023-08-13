@@ -122,7 +122,7 @@ def handle_follow_event(event: FollowEvent):
                 )
 
 @api_router.post("/signup", tags=["users"])
-def signup(request: schemas.Signup, _request: Request, database: Session=Depends(_get_database)):
+def signup(request: schemas.Signup, database: Session=Depends(_get_database)):
     user = crud.create_user(database, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -148,7 +148,7 @@ def get_me(current_user: models.User=Depends(_get_current_user)) -> schemas.User
 
 @api_router.post("/me/update_password", tags=["users"])
 def update_password(request: schemas.Password, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    user = crud.update_password(database, current_user.user_uuid, request)
+    user = crud.update_password(database, current_user.username, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
@@ -156,7 +156,7 @@ def update_password(request: schemas.Password, current_user: models.User=Depends
 
 @api_router.post("/me/update_display_name", tags=["users"])
 def update_display_name(request: schemas.DisplayName, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    user = crud.update_display_name(database, current_user.user_uuid, request)
+    user = crud.update_display_name(database, current_user.username, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
@@ -164,9 +164,9 @@ def update_display_name(request: schemas.DisplayName, current_user: models.User=
 
 @api_router.delete("/me", tags=["users"])
 def delete_me(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    user = crud.delete_user(database, current_user.user_uuid)
+    user = crud.delete_user(database, current_user.username)
     if not user:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
 
@@ -183,6 +183,8 @@ def get_board(board_uuid: str, current_user: models.User=Depends(_get_current_us
     board = crud.read_board(database, board_uuid=board_uuid)
     if not board:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
 
     return board
 
@@ -199,9 +201,14 @@ def post_board(request: schemas.NewBoard, _request: Request, current_user: model
 
 @api_router.delete("/board/{board_uuid}", tags=["boards"])
 def delete_board(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     board = crud.delete_board(database, board_uuid)
     if not board:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
 
@@ -223,6 +230,11 @@ def update_my_boards(request: schemas.NewMyBoards, current_user: models.User=Dep
 
 @api_router.get("/board/{board_uuid}/subboards",response_model=List[schemas.SubboardWithBoard], tags=["subboards"])
 def get_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.SubboardWithBoard]:
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     subboards = crud.read_subboards(database, board_uuid)
     if not subboards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
@@ -231,6 +243,11 @@ def get_subboards(board_uuid: str, current_user: models.User=Depends(_get_curren
 
 @api_router.get("/board/{board_uuid}/subboards/{subboard_uuid}", response_model = schemas.SubboardWithBoard, tags=["subboards"])
 def get_subboard(board_uuid: str, subboard_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> schemas.SubboardWithBoard:
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     subboard = crud.read_subboard(database, board_uuid, subboard_uuid)
     if not subboard:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
@@ -239,6 +256,11 @@ def get_subboard(board_uuid: str, subboard_uuid: str, current_user: models.User=
 
 @api_router.post("/board/{board_uuid}/subboard", tags=["subboards"])
 def post_subboard(board_uuid: str, request: schemas.NewSubboard, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     subboard = crud.create_subboard(database, board_uuid, request)
     if not subboard:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -250,14 +272,24 @@ def post_subboard(board_uuid: str, request: schemas.NewSubboard, _request: Reque
 
 @api_router.delete("/board/{board_uuid}/subboard/{subboard_uuid}", tags=["subboards"])
 def delete_subboard(board_uuid: str, subboard_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    subboard = crud.read_subboard(database, board_uuid, subboard_uuid)
+    if not subboard:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if subboard.board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     subboard = crud.delete_subboard(database, board_uuid, subboard_uuid)
     if not subboard:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
 
 @api_router.get("/board/{board_uuid}/available_subboards", response_model=List[schemas.MySubboard], tags=["subboards"])
 def get_available_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     available_subboards = crud.read_subboards(database, board_uuid)
     if not available_subboards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
@@ -282,6 +314,11 @@ def update_my_subboards(board_uuid: str, request: schemas.NewMySubboards, curren
 
 @api_router.get("/board/{board_uuid}/messages", response_model=List[schemas.Message], tags=["messages"])
 def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     messages = crud.read_messages(database, board_uuid)
     if not messages:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
@@ -290,6 +327,11 @@ def get_messages(board_uuid: str, current_user: models.User=Depends(_get_current
 
 @api_router.post("/board/{board_uuid}/message", tags=["messages"])
 def post_message(board_uuid: str, request: schemas.NewMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     message = crud.create_message(database, board_uuid, request)
     if not message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -313,9 +355,14 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
 
 @api_router.delete("/board/{board_uuid}/message/{message_uuid}", tags=["messages"])
 def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    message = crud.read_message(database, board_uuid, message_uuid)
+    if not message:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if message.board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     message = crud.delete_message(database, board_uuid, message_uuid)
     if not message:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
 
@@ -340,16 +387,22 @@ def post_direct_message(request: schemas.NewDirectMessage, _request: Request, cu
     direct_message = crud.create_direct_message(database, current_user.username, request)
     if not direct_message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
+    response = {
+        "Location": urllib.parse.urljoin(_request.url._url, f"./direct_message/{direct_message.direct_message_uuid}")
+    }
 
-    return status.HTTP_201_CREATED
+    return JSONResponse(response, status.HTTP_201_CREATED)
 
 @api_router.delete("/direct_message/{direct_message_uuid}", tags=["direct_messages"])
 def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    direct_message = crud.read_direct_message(database, direct_message_uuid)
+    if not direct_message:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if direct_message.send_from.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     direct_message = crud.delete_direct_message(database, direct_message_uuid)
     if not direct_message:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
-    if not direct_message.scheduled_send_time:
-        post_direct_message_from_line_bot(direct_message)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
 
@@ -366,6 +419,11 @@ def get_my_direct_messages(current_user: models.User=Depends(_get_current_user),
 
 @api_router.get("/board/{board_uuid}/forms", response_model=List[schemas.Form], tags=["forms"])
 def get_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Form]:
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     forms = crud.read_forms(database, board_uuid)
     if not forms:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
@@ -374,6 +432,11 @@ def get_forms(board_uuid: str, current_user: models.User=Depends(_get_current_us
 
 @api_router.post("/board/{board_uuid}/form", tags=["forms"])
 def post_form(board_uuid: str, request: schemas.NewForm, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     form = crud.create_form(database, board_uuid, request)
     if not form:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -385,9 +448,14 @@ def post_form(board_uuid: str, request: schemas.NewForm, _request: Request, curr
 
 @api_router.delete("/board/{board_uuid}/form/{form_uuid}", tags=["forms"])
 def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+    form = crud.read_form(database, board_uuid, form_uuid)
+    if not form:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if form.board.administrator.username != current_user.username:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
     form = crud.delete_form(database, board_uuid, form_uuid)
     if not form:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST)
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
 
