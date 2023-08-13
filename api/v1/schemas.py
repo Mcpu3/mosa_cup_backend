@@ -167,7 +167,7 @@ class DirectMessage(BaseModel):
 
 
 class NewDirectMessage(BaseModel):
-    send_to_uuids: List[str]
+    send_to_names: List[str]
     body: str
     scheduled_send_time: Optional[datetime]
 

@@ -172,7 +172,7 @@ def delete_me(current_user: models.User=Depends(_get_current_user), database: Se
 
 @api_router.get("/boards", response_model=List[schemas.BoardWithSubboards], tags=["boards"])
 def get_boards(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.BoardWithSubboards]:
-    boards = crud.read_boards(database, current_user.user_uuid)
+    boards = crud.read_boards(database, current_user.username)
     if not boards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -188,7 +188,7 @@ def get_board(board_uuid: str, current_user: models.User=Depends(_get_current_us
 
 @api_router.post("/board", tags=["boards"])
 def post_board(request: schemas.NewBoard, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    board = crud.create_board(database, current_user.user_uuid, request)
+    board = crud.create_board(database, current_user.username, request)
     if not board:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
     response = {
@@ -207,7 +207,7 @@ def delete_board(board_uuid: str, current_user: models.User=Depends(_get_current
 
 @api_router.get("/my_boards", response_model=List[schemas.MyBoard], tags=["boards"])
 def get_my_boards(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MyBoard]:
-    my_boards = crud.read_my_boards(database, current_user.user_uuid)
+    my_boards = crud.read_my_boards(database, current_user.username)
     if not my_boards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -215,7 +215,7 @@ def get_my_boards(current_user: models.User=Depends(_get_current_user), database
 
 @api_router.post("/update_my_boards", tags=["boards"])
 def update_my_boards(request: schemas.NewMyBoards, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    user = crud.update_my_boards(database, current_user.user_uuid, request)
+    user = crud.update_my_boards(database, current_user.username, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
@@ -258,7 +258,7 @@ def delete_board(board_uuid: str, subboard_uuid: str, current_user: models.User=
 
 @api_router.get("/board/{board_uuid}/my_subboards", response_model=List[schemas.MySubboard], tags=["subboards"])
 def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
-    my_subboards = crud.read_my_subboards(database, current_user.user_uuid, board_uuid)
+    my_subboards = crud.read_my_subboards(database, current_user.username, board_uuid)
     if not my_subboards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -266,7 +266,7 @@ def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_cur
 
 @api_router.post("/board/{board_uuid}/update_my_subboards", tags=["subboards"])
 def update_my_subboards(board_uuid: str, request: schemas.NewMySubboards, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    user = crud.update_my_subboards(database, current_user.user_uuid, board_uuid, request)
+    user = crud.update_my_subboards(database, current_user.username, board_uuid, request)
     if not user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
@@ -313,7 +313,7 @@ def delete_message(board_uuid: str, message_uuid: str, current_user: models.User
 
 @api_router.get("/board/{board_uuid}/my_messages", response_model=List[schemas.Message], tags=["messages"])
 def get_my_messages(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.Message]:
-    my_messages = crud.read_my_messages(database, current_user.user_uuid, board_uuid)
+    my_messages = crud.read_my_messages(database, current_user.username, board_uuid)
     if not my_messages:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -321,7 +321,7 @@ def get_my_messages(board_uuid: str, current_user: models.User=Depends(_get_curr
 
 @api_router.get("/direct_messages", response_model=List[schemas.DirectMessage], tags=["direct_messages"])
 def get_direct_messages(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.DirectMessage]:
-    direct_messages = crud.read_direct_messages(database, current_user.user_uuid)
+    direct_messages = crud.read_direct_messages(database, current_user.username)
     if not direct_messages:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -329,7 +329,7 @@ def get_direct_messages(current_user: models.User=Depends(_get_current_user), da
 
 @api_router.post("/direct_message", tags=["direct_messages"])
 def post_direct_message(request: schemas.NewDirectMessage, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    direct_message = crud.create_direct_message(database, current_user.user_uuid, request)
+    direct_message = crud.create_direct_message(database, current_user.username, request)
     if not direct_message:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
@@ -350,7 +350,7 @@ def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> 
 
 @api_router.get("/my_direct_messages", response_model=List[schemas.DirectMessage], tags=["direct_messages"])
 def get_my_direct_messages(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.DirectMessage]:
-    my_direct_messages = crud.read_my_direct_messages(database, current_user.user_uuid)
+    my_direct_messages = crud.read_my_direct_messages(database, current_user.username)
     if not my_direct_messages:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -385,7 +385,7 @@ def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depen
 
 @api_router.get("/board/{board_uuid}/form/{form_uuid}/my_form_responses", response_model=List[schemas.FormResponse], tags=["forms"])
 def get_my_form_responses(board_uuid: str, form_uuid, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.FormResponse]:
-    my_form_responses = crud.read_my_form_responses(database, current_user.user_uuid, form_uuid)
+    my_form_responses = crud.read_my_form_responses(database, current_user.username, form_uuid)
     if not my_form_responses:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
 
@@ -393,7 +393,7 @@ def get_my_form_responses(board_uuid: str, form_uuid, current_user: models.User=
 
 @api_router.post("/board/{board_uuid}/form/{form_uuid}/my_form_response", tags=["forms"])
 def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewMyFormResponse, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
-    my_form_response = crud.create_my_form_response(database, current_user.user_uuid, form_uuid, request)
+    my_form_response = crud.create_my_form_response(database, current_user.username, form_uuid, request)
     if not my_form_response:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 

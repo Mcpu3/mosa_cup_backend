@@ -31,8 +31,8 @@ class User(Base):
     boards = relationship("Board", back_populates="administrator")
     my_boards = relationship("Board", secondary="BoardMembers", back_populates="members")
     my_subboards = relationship("Subboard", secondary="SubboardMembers", back_populates="members")
-    sent_direct_messages = relationship("DirectMessage", back_populates="send_from", foreign_keys="DirectMessage.send_from_uuid")
-    received_direct_messages = relationship("DirectMessage", back_populates="send_to", foreign_keys="DirectMessage.send_to_uuid")
+    sent_direct_messages = relationship("DirectMessage", back_populates="send_from", foreign_keys="DirectMessage.send_from_name")
+    received_direct_messages = relationship("DirectMessage", back_populates="send_to", foreign_keys="DirectMessage.send_to_name")
     sent_form_responses = relationship("FormResponse", back_populates="respondent")
 
 
@@ -42,8 +42,8 @@ class Board(Base):
     board_uuid = Column(String(48), primary_key=True)
     board_id = Column(String(48), unique=True, nullable=False)
     board_name = Column(Unicode, nullable=False)
-    administrator_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
-    administrator = relationship("User", back_populates="boards", foreign_keys=[administrator_uuid])
+    administrator_name = Column(String(48), ForeignKey("Users.username"), nullable=False)
+    administrator = relationship("User", back_populates="boards", foreign_keys=[administrator_name])
     members = relationship("User", secondary="BoardMembers", back_populates="my_boards")
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
@@ -57,7 +57,7 @@ class Board(Base):
 class BoardMember(Base):
     __tablename__ = "BoardMembers"
 
-    user_uuid = Column(String(48), ForeignKey("Users.user_uuid"), primary_key=True)
+    username = Column(String(48), ForeignKey("Users.username"), primary_key=True)
     board_uuid = Column(String(48), ForeignKey("Boards.board_uuid"), primary_key=True)
 
 
@@ -80,7 +80,7 @@ class Subboard(Base):
 class SubboardMember(Base):
     __tablename__ = "SubboardMembers"
 
-    user_uuid = Column(String(48), ForeignKey("Users.user_uuid"), primary_key=True)
+    username = Column(String(48), ForeignKey("Users.username"), primary_key=True)
     subboard_uuid = Column(String(48), ForeignKey("Subboards.subboard_uuid"), primary_key=True)
 
 
@@ -110,10 +110,10 @@ class DirectMessage(Base):
     __tablename__ = "DirectMessages"
 
     direct_message_uuid = Column(String(48), primary_key=True)
-    send_from_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
-    send_from = relationship("User", back_populates="sent_direct_messages", foreign_keys=[send_from_uuid])
-    send_to_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
-    send_to = relationship("User", back_populates="received_direct_messages", foreign_keys=[send_to_uuid])
+    send_from_name = Column(String(48), ForeignKey("Users.username"), nullable=False)
+    send_from = relationship("User", back_populates="sent_direct_messages", foreign_keys=[send_from_name])
+    send_to_name = Column(String(48), ForeignKey("Users.username"), nullable=False)
+    send_to = relationship("User", back_populates="received_direct_messages", foreign_keys=[send_to_name])
     body = Column(Unicode, nullable=False)
     send_time = Column(DateTime, nullable=True)
     scheduled_send_time = Column(DateTime, nullable=True)
@@ -167,7 +167,7 @@ class FormResponse(Base):
     __tablename__ = "FormResponses"
 
     form_response_uuid = Column(String(48), primary_key=True)
-    respondent_uuid = Column(String(48), ForeignKey("Users.user_uuid"), nullable=False)
+    respondent_name = Column(String(48), ForeignKey("Users.username"), nullable=False)
     respondent = relationship("User", back_populates="sent_form_responses")
     form_uuid = Column(String(48), ForeignKey("Forms.form_uuid"), nullable=False)
     form = relationship("Form", back_populates="form_responses")

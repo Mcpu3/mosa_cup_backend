@@ -42,8 +42,8 @@ class User(database.Model):
     boards = database.relationship("Board", back_populates="administrator")
     my_boards = database.relationship("Board", secondary="BoardMembers", back_populates="members")
     my_subboards = database.relationship("Subboard", secondary="SubboardMembers", back_populates="members")
-    sent_direct_messages = database.relationship("DirectMessage", back_populates="send_from", foreign_keys="DirectMessage.send_from_uuid")
-    received_direct_messages = database.relationship("DirectMessage", back_populates="send_to", foreign_keys="DirectMessage.send_to_uuid")
+    sent_direct_messages = database.relationship("DirectMessage", back_populates="send_from", foreign_keys="DirectMessage.send_from_name")
+    received_direct_messages = database.relationship("DirectMessage", back_populates="send_to", foreign_keys="DirectMessage.send_to_name")
     sent_form_responses = database.relationship("FormResponse", back_populates="respondent")
 
 
@@ -53,8 +53,8 @@ class Board(database.Model):
     board_uuid = database.Column(database.String(48), primary_key=True)
     board_id = database.Column(database.String(48), unique=True, nullable=False)
     board_name = database.Column(database.Unicode, nullable=False)
-    administrator_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
-    administrator = database.relationship("User", back_populates="boards", foreign_keys=[administrator_uuid])
+    administrator_name = database.Column(database.String(48), database.ForeignKey("Users.username"), nullable=False)
+    administrator = database.relationship("User", back_populates="boards", foreign_keys=[administrator_name])
     members = database.relationship("User", secondary="BoardMembers", back_populates="my_boards")
     created_at = database.Column(database.DateTime, nullable=False)
     updated_at = database.Column(database.DateTime, nullable=True)
@@ -68,7 +68,7 @@ class Board(database.Model):
 class BoardMember(database.Model):
     __tablename__ = "BoardMembers"
 
-    user_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), primary_key=True)
+    username = database.Column(database.String(48), database.ForeignKey("Users.username"), primary_key=True)
     board_uuid = database.Column(database.String(48), database.ForeignKey("Boards.board_uuid"), primary_key=True)
 
 
@@ -91,7 +91,7 @@ class Subboard(database.Model):
 class SubboardMember(database.Model):
     __tablename__ = "SubboardMembers"
 
-    user_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), primary_key=True)
+    username = database.Column(database.String(48), database.ForeignKey("Users.username"), primary_key=True)
     subboard_uuid = database.Column(database.String(48), database.ForeignKey("Subboards.subboard_uuid"), primary_key=True)
 
 
@@ -121,10 +121,10 @@ class DirectMessage(database.Model):
     __tablename__ = "DirectMessages"
 
     direct_message_uuid = database.Column(database.String(48), primary_key=True)
-    send_from_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
-    send_from = database.relationship("User", back_populates="sent_direct_messages", foreign_keys=[send_from_uuid])
-    send_to_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
-    send_to = database.relationship("User", back_populates="received_direct_messages", foreign_keys=[send_to_uuid])
+    send_from_name = database.Column(database.String(48), database.ForeignKey("Users.username"), nullable=False)
+    send_from = database.relationship("User", back_populates="sent_direct_messages", foreign_keys=[send_from_name])
+    send_to_name = database.Column(database.String(48), database.ForeignKey("Users.username"), nullable=False)
+    send_to = database.relationship("User", back_populates="received_direct_messages", foreign_keys=[send_to_name])
     body = database.Column(database.Unicode, nullable=False)
     send_time = database.Column(database.DateTime, nullable=True)
     scheduled_send_time = database.Column(database.DateTime, nullable=True)
@@ -178,7 +178,7 @@ class FormResponse(database.Model):
     __tablename__ = "FormResponses"
 
     form_response_uuid = database.Column(database.String(48), primary_key=True)
-    respondent_uuid = database.Column(database.String(48), database.ForeignKey("Users.user_uuid"), nullable=False)
+    respondent_name = database.Column(database.String(48), database.ForeignKey("Users.username"), nullable=False)
     respondent = database.relationship("User", back_populates="sent_form_responses")
     form_uuid = database.Column(database.String(48), database.ForeignKey("Forms.form_uuid"), nullable=False)
     form = database.relationship("Form", back_populates="form_responses")
