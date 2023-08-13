@@ -180,7 +180,7 @@ def get_boards(current_user: models.User=Depends(_get_current_user), database: S
 
 @api_router.get("/board/{board_uuid}", response_model=schemas.BoardWithSubboards, tags=["boards"])
 def get_board(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> schemas.BoardWithSubboards:
-    board = crud.read_board(database, board_uuid)
+    board = crud.read_board(database, board_uuid=board_uuid)
     if not board:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
 
@@ -238,7 +238,7 @@ def get_subboard(board_uuid: str, subboard_uuid: str, current_user: models.User=
     return subboard
 
 @api_router.post("/board/{board_uuid}/subboard", tags=["subboards"])
-def post_board(board_uuid: str, request: schemas.NewSubboard, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+def post_subboard(board_uuid: str, request: schemas.NewSubboard, _request: Request, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     subboard = crud.create_subboard(database, board_uuid, request)
     if not subboard:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
@@ -249,12 +249,20 @@ def post_board(board_uuid: str, request: schemas.NewSubboard, _request: Request,
     return JSONResponse(response, status.HTTP_201_CREATED)
 
 @api_router.delete("/board/{board_uuid}/subboard/{subboard_uuid}", tags=["subboards"])
-def delete_board(board_uuid: str, subboard_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
+def delete_subboard(board_uuid: str, subboard_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
     subboard = crud.delete_subboard(database, board_uuid, subboard_uuid)
     if not subboard:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
     return status.HTTP_200_OK
+
+@api_router.get("/board/{board_uuid}/available_subboards", response_model=List[schemas.MySubboard], tags=["subboards"])
+def get_available_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
+    available_subboards = crud.read_subboards(database, board_uuid)
+    if not available_subboards:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+
+    return available_subboards
 
 @api_router.get("/board/{board_uuid}/my_subboards", response_model=List[schemas.MySubboard], tags=["subboards"])
 def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
@@ -435,10 +443,10 @@ def handle_message_event(event: MessageEvent):
             user = crud.read_user(line_user_id=event.source.user_id)
             if user:
                 my_boards = crud.read_my_boards(database, user.user_uuid)
-                new_my_board_uuids = [my_board.board_uuid for my_board in my_boards]
-                new_my_board_uuids.append(new_my_board_uuid)
+                new_my_board_ids = [my_board.board_id for my_board in my_boards]
+                new_my_board_ids.append(new_my_board_uuid)
                 new_my_boards = schemas.NewMyBoards(
-                    new_my_board_uuids=new_my_board_uuids
+                    new_my_board_ids=new_my_board_ids
                 )
                 user = crud.update_my_boards(database, user.user_uuid, new_my_boards)
     else:
