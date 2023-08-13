@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import FollowEvent, MessageAction, MessageEvent, RichMenu, RichMenuArea, RichMenuBounds, RichMenuSize, TextMessage, TextSendMessage
+from linebot.models import FollowEvent, MessageAction, MessageEvent, RichMenu, RichMenuArea, RichMenuBounds, RichMenuSize, TextMessage, TextSendMessage, FlexSendMessage, FlexContainer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -301,7 +301,37 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
             line_user_ids.append(member.line_user.user_id)
     line_user_ids = list(set(line_user_ids))
 
-    line_bot_api.multicast(line_user_ids, TextSendMessage(message.body))
+    bubble_string = """{ 
+        "type":"bubble",
+        "body":{
+            "type":"box",
+            "layout":"vertical",
+            "contents":[
+            {
+                "type":"text",
+                "text":"{message.board}",
+                "weight":"bold",
+                "size":"xl"
+            },
+            {
+                "type":"box",
+                "layout":"vertical",
+                "margin":"lg",
+                "spacing":"sm",
+                "contents":[
+                {
+                    "type":"text",
+                    "text":"{message.body}",
+                    "color":"#666666",
+                    "size":"sm",
+                }
+                ]
+            }
+            ]
+        }
+    }"""
+
+    line_bot_api.multicast(line_user_ids, FlexSendMessage(contents=FlexContainer.from_json(bubble_string)))
 
 @api_router.delete("/board/{board_uuid}/message/{message_uuid}", tags=["messages"])
 def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
