@@ -173,13 +173,19 @@ class NewDirectMessage(BaseModel):
 
 
 class FormYesNoQuestionResponse(BaseModel):
-    form_quetion_response_uuid: str
+    form_question_response_uuid: str
     form_question_uuid: str
     yes: bool
     no: bool
 
     class Config:
         orm_mode = True
+
+
+class NewMyFormYesNoQuestionResponse(BaseModel):
+    form_question_uuid: str
+    yes: bool
+    no: bool
 
 
 class FormYesNoQuestion(BaseModel):
@@ -192,6 +198,12 @@ class FormYesNoQuestion(BaseModel):
         orm_mode = True
 
 
+class NewFormYesNoQuestion(BaseModel):
+    title: str
+    yes: str
+    no: str
+
+
 class FormResponse(BaseModel):
     form_response_uuid: str
     respondent: User
@@ -200,6 +212,10 @@ class FormResponse(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class NewMyFormResponse(BaseModel):
+    form_question_responses: List[NewMyFormYesNoQuestionResponse]
 
 
 class Form(BaseModel):
@@ -216,8 +232,14 @@ class Form(BaseModel):
         orm_mode = True
 
 
-class Forms(BaseModel):
-    forms: list[Form]
+class MyForm(BaseModel):
+    form_uuid: str
+    board: MyBoardWithSubboards
+    subboards: List[MySubboardWithBoard]
+    title: str
+    send_time: Optional[datetime]
+    scheduled_send_time: Optional[datetime]
+    form_questions: List[FormYesNoQuestion]
 
     class Config:
         orm_mode = True
@@ -227,11 +249,4 @@ class NewForm(BaseModel):
     subboard_uuids: List[str]
     title: str
     scheduled_send_time: Optional[datetime]
-    form_questions: List[FormYesNoQuestion]
-
-    class Config:
-        orm_mode = True
-
-
-class NewMyFormResponse(BaseModel):
-    form_question_responses: List[FormYesNoQuestionResponse]
+    new_form_questions: List[NewFormYesNoQuestion]

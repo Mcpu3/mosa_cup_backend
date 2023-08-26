@@ -212,8 +212,8 @@ def delete_board(board_uuid: str, current_user: models.User=Depends(_get_current
 
     return status.HTTP_200_OK
 
-@api_router.get("/my_boards", response_model=List[schemas.MyBoard], tags=["boards"])
-def get_my_boards(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MyBoard]:
+@api_router.get("/my_boards", response_model=List[schemas.MyBoardWithSubboards], tags=["boards"])
+def get_my_boards(current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MyBoardWithSubboards]:
     my_boards = crud.read_my_boards(database, current_user.username)
     if not my_boards:
         raise HTTPException(status.HTTP_204_NO_CONTENT)
@@ -286,8 +286,8 @@ def delete_subboard(board_uuid: str, subboard_uuid: str, current_user: models.Us
 
     return status.HTTP_200_OK
 
-@api_router.get("/board/{board_uuid}/available_subboards", response_model=List[schemas.MySubboard], tags=["subboards"])
-def get_available_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
+@api_router.get("/board/{board_uuid}/available_subboards", response_model=List[schemas.MySubboardWithBoard], tags=["subboards"])
+def get_available_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboardWithBoard]:
     board = crud.read_board(database, board_uuid=board_uuid)
     if not board:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
@@ -299,8 +299,8 @@ def get_available_subboards(board_uuid: str, current_user: models.User=Depends(_
 
     return available_subboards
 
-@api_router.get("/board/{board_uuid}/my_subboards", response_model=List[schemas.MySubboard], tags=["subboards"])
-def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboard]:
+@api_router.get("/board/{board_uuid}/my_subboards", response_model=List[schemas.MySubboardWithBoard], tags=["subboards"])
+def get_my_subboards(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MySubboardWithBoard]:
     board = crud.read_board(database, board_uuid=board_uuid)
     if not board:
         raise HTTPException(status.HTTP_404_NOT_FOUND)
@@ -490,6 +490,19 @@ def delete_form(board_uuid: str, form_uuid: str, current_user: models.User=Depen
         raise HTTPException(status.HTTP_404_NOT_FOUND)
 
     return status.HTTP_200_OK
+
+@api_router.get("/board/{board_uuid}/my_forms", response_model=List[schemas.MyForm], tags=["forms"])
+def get_my_forms(board_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.MyForm]:
+    board = crud.read_board(database, board_uuid=board_uuid)
+    if not board:
+        raise HTTPException(status.HTTP_404_NOT_FOUND)
+    if current_user not in board.members:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED)
+    my_forms = crud.read_my_forms(database, current_user.username, board_uuid)
+    if not my_forms:
+        raise HTTPException(status.HTTP_204_NO_CONTENT)
+
+    return my_forms
 
 @api_router.get("/board/{board_uuid}/form/{form_uuid}/my_form_responses", response_model=List[schemas.FormResponse], tags=["forms"])
 def get_my_form_responses(board_uuid: str, form_uuid, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)) -> List[schemas.FormResponse]:
