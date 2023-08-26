@@ -186,8 +186,8 @@ class FormResponse(database.Model):
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
 
-
     form_question_responses = database.relationship("FormYesNoQuestionResponse", back_populates="form_response")
+
 
 class FormYesNoQuestionResponse(database.Model):
     __tablename__ = "FormYesNoQuestionResponses"
