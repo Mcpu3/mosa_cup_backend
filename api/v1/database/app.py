@@ -200,5 +200,5 @@ class FormYesNoQuestionResponse(database.Model):
     yes = database.Column(database.Boolean, nullable=False)
     no = database.Column(database.Boolean, nullable=False)
     created_at = database.Column(database.DateTime, nullable=False)
-    updated_At = database.Column(database.DateTime, nullable=True)
+    updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)

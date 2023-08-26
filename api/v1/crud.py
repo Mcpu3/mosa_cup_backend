@@ -346,11 +346,10 @@ def create_form(database: Session, board_uuid: str, new_form: schemas.NewForm) -
     database.commit()
     database.refresh(form)
     if form:
-        for new_form_question in new_form.form_questions:
+        for new_form_question in new_form.new_form_questions:
             form_question = create_form_question(database, form.form_uuid, new_form_question)
             if form_question:
                 form.form_questions.append(form_question)
-        database.add(form)
         database.commit()
         database.refresh(form)
 
@@ -387,6 +386,13 @@ def create_form_question(database: Session, form_uuid: str, new_form_question: s
 
     return form_question
 
+def read_my_forms(database: Session, username: str, board_uuid: str) -> Optional[models.Form]:
+    query = database.query(models.Form).filter(and_(models.Form.board_uuid == board_uuid, models.Form.deleted == False))
+    my_subboards = read_my_subboards(database, username, board_uuid)
+    forms = query.filter(models.Form.subboards.any(models.Subboard.subboard_uuid.in_([my_subboard.subboard_uuid for my_subboard in my_subboards]))).all()
+
+    return forms
+
 def read_my_form_responses(database: Session, username: str, form_uuid: str) -> List[models.FormResponse]:
     return database.query(models.FormResponse).filter(and_(models.FormResponse.form_uuid == form_uuid, models.FormResponse.respondent_name == username, models.FormResponse.deleted == False)).all()
 
@@ -399,12 +405,14 @@ def create_my_form_response(database: Session, username: str, form_uuid: str, ne
         form_uuid=form_uuid,
         created_at=created_at
     )
+    database.add(form_response)
+    database.commit()
+    database.refresh(form_response)
     if form_response:
         for new_form_question_response in new_my_form_response.form_question_responses:
             form_question_response = create_form_question_response(database, form_response.form_response_uuid, new_form_question_response)
             if form_question_response:
                 form_response.form_question_responses.append(form_question_response)
-        database.add(form_response)
         database.commit()
         database.refresh(form_response)
 
@@ -413,7 +421,7 @@ def create_my_form_response(database: Session, username: str, form_uuid: str, ne
 def create_form_question_response(database: Session, form_response_uuid: str, new_form_question_response: schemas.FormYesNoQuestionResponse) -> Optional[models.FormYesNoQuestionResponse]:
     form_question_response_uuid = str(uuid4())
     created_at = datetime.now()
-    form_question_response = models.FormYesNoQuestion(
+    form_question_response = models.FormYesNoQuestionResponse(
         form_question_response_uuid=form_question_response_uuid,
         form_response_uuid=form_response_uuid,
         form_question_uuid=new_form_question_response.form_question_uuid,
