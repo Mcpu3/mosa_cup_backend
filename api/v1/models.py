@@ -177,6 +177,7 @@ class FormResponse(Base):
 
     form_question_responses = relationship("FormYesNoQuestionResponse", back_populates="form_response")
 
+
 class FormYesNoQuestionResponse(Base):
     __tablename__ = "FormYesNoQuestionResponses"
 
@@ -188,5 +189,5 @@ class FormYesNoQuestionResponse(Base):
     yes = Column(Boolean, nullable=False)
     no = Column(Boolean, nullable=False)
     created_at = Column(DateTime, nullable=False)
-    updated_At = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
