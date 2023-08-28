@@ -89,39 +89,6 @@ def init_line_bot_api() -> Tuple[LineBotApi, WebhookHandler]:
 
     return line_bot_api, web_hook_handler
 
-def create_flex_message(board,body):
-    flex_message = { 
-        "type":"bubble",
-        "body":{
-            "type":"box",
-            "layout":"vertical",
-            "contents":[
-            {
-                "type":"text",
-                "text":board,
-                "weight":"bold",
-                "size":"xl"
-            },
-            {
-                "type":"box",
-                "layout":"vertical",
-                "margin":"lg",
-                "spacing":"sm",
-                "contents":[
-                {
-                    "type":"text",
-                    "text":body,
-                    "color":"#666666",
-                    "size":"sm",
-                }
-                ]
-            }
-            ]
-        }
-    }
-    return flex_message
-
-
 line_bot_api, web_hook_handler = init_line_bot_api()
 
 @api_router.post("/callback", tags=["LINE"])
@@ -334,7 +301,36 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
             line_user_ids.append(member.line_user.user_id)
     line_user_ids = list(set(line_user_ids))
 
-    bubble_string = create_flex_message(message.board,message.body)
+    bubble_string = """{ 
+        "type":"bubble",
+        "body":{
+            "type":"box",
+            "layout":"vertical",
+            "contents":[
+            {
+                "type":"text",
+                "text":"{message.board}",
+                "weight":"bold",
+                "size":"xl"
+            },
+            {
+                "type":"box",
+                "layout":"vertical",
+                "margin":"lg",
+                "spacing":"sm",
+                "contents":[
+                {
+                    "type":"text",
+                    "text":"{message.body}",
+                    "color":"#666666",
+                    "size":"sm",
+                }
+                ]
+            }
+            ]
+        }
+    }"""
+
     line_bot_api.multicast(line_user_ids, FlexSendMessage(contents=FlexContainer.from_json(bubble_string)))
 
 @api_router.delete("/board/{board_uuid}/message/{message_uuid}", tags=["messages"])
