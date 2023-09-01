@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import copy
 import json
 import os
 from typing import List, Tuple
@@ -433,7 +434,10 @@ def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> 
             flex_message = json.load(f)
         flex_message["body"]["contents"][0]["text"] = direct_message.send_from.display_name if direct_message.send_from.display_name else direct_message.send_from.username
         flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = direct_message.body
-        line_bot_api.push_message(direct_message.send_to.line_user.user_id, FlexSendMessage(direct_message.body, flex_message))
+        line_bot_api.push_message(
+            direct_message.send_to.line_user.user_id,
+            FlexSendMessage(direct_message.body, flex_message)
+        )
 
 @api_router.delete("/direct_message/{direct_message_uuid}", tags=["direct_messages"])
 def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -586,14 +590,18 @@ def handle_message_event(event: MessageEvent):
                 if line_message_context:
                     if line_message_context.message_context == "ボード設定":
                         if event.message.text == "1":
-                            # line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
+                            line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
                             with open("./api/v1/assets/flex_messages/boards.json") as f:
                                 flex_message = json.load(f)
-                            for _ in range(len(user.boards) - 1):
-                                flex_message["body"]["contents"][1]["contents"].append(flex_message["body"]["contents"][1]["contents"][0])
-                            for i, board in enumerate(user.boards):
-                                flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = board.board_id
-                                flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = board.board_name
+                            if len(user.boards) > 0:
+                                for _ in range(len(user.boards) - 1):
+                                    flex_message["body"]["contents"][1]["contents"].append(copy.deepcopy(flex_message["body"]["contents"][1]["contents"][0]))
+                                for i, board in enumerate(user.boards):
+                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = board.board_id
+                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = board.board_name
+                            else:
+                                flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = "入っているボードはありません"
+                                flex_message["body"]["contents"][1]["contents"][0]["contents"][1]["text"] = "入っているボードはありません"
                             line_bot_api.push_message(
                                 event.source.user_id,
                                 FlexSendMessage("入っているボード", flex_message)
