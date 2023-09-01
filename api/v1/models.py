@@ -9,9 +9,19 @@ class LINEUser(Base):
 
     line_user_uuid = Column(String(48), primary_key=True)
     user_id = Column(String(48), unique=True, nullable=False)
+    message_context_uuid = Column(String(48), ForeignKey("LINEMessageContexts.line_message_context_uuid"), nullable=True)
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
+
+    message_context = relationship("LINEMessageContext")
+
+
+class LINEMessageContext(Base):
+    __tablename__ = "LINEMessageContexts"
+
+    line_message_context_uuid = Column(String(48), primary_key=True)
+    message_context = Column(Unicode, nullable=True)
 
 
 class User(Base):
