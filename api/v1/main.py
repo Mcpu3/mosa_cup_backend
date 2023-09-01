@@ -582,6 +582,19 @@ def handle_message_event(event: MessageEvent):
                         event.source.user_id,
                         TextSendMessage("1: 入っているボードを表示する\n2: ボードに入る/ボードから出る")
                     )
+        elif event.message.text == "サブボード設定":
+            user = crud.read_user(database, line_user_id=event.source.user_id)
+            if user:
+                line_message_context = crud.read_line_message_context(database, user.line_user_uuid)
+                if not line_message_context:
+                    line_message_context = crud.create_line_message_context(database, user.line_user_uuid, "サブボード設定")
+                else:
+                    line_message_context = crud.update_line_message_context(database, user.line_user_uuid, "サブボード設定")
+                if line_message_context:
+                    line_bot_api.push_message(
+                        event.source.user_id,
+                        TextSendMessage("ボードID:")
+                    )
         else:
             user = crud.read_user(database, line_user_id=event.source.user_id)
             if user:
@@ -626,7 +639,7 @@ def handle_message_event(event: MessageEvent):
                                     if user:
                                         line_bot_api.push_message(
                                             event.source.user_id,
-                                            TextSendMessage(f'ボード "{board.board_name}" に入りました')
+                                            TextSendMessage(f'ボード "{board.board_name}" に入りました。')
                                         )
                                 else:
                                     new_my_board_ids.remove(board.board_id)
@@ -634,5 +647,17 @@ def handle_message_event(event: MessageEvent):
                                     if user:
                                         line_bot_api.push_message(
                                             event.source.user_id,
-                                            TextSendMessage(f'ボード "{board.board_name}" から出ました')
+                                            TextSendMessage(f'ボード "{board.board_name}" から出ました。')
                                         )
+                    elif line_message_context.message_context == "サブボード設定":
+                        line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
+                        if line_message_context:
+                            board = crud.read_board(database, board_id=event.message.text)
+                            if board:
+                                my_boards = crud.read_my_boards(database, user.username)
+                                if board.board_id in [my_board.board_id for my_board in my_boards]:
+                                    update_my_subboards_url = f"https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/boardregistration/{board.board_uuid}"
+                                    line_bot_api.push_message(
+                                        event.source.user_id,
+                                        TextSendMessage(f'ボード "{update_my_subboards_url}" でサブボードに入る/サブボードから出ることができます。')
+                                    )
