@@ -614,14 +614,14 @@ def handle_message_event(event: MessageEvent):
                                     event.source.user_id,
                                     TextSendMessage("ボードID:")
                                 )
-                    if line_message_context.message_context == "ボードに入る/ボードから出る":
+                    elif line_message_context.message_context == "ボードに入る/ボードから出る":
                         line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
                         if line_message_context:
                             board = crud.read_board(database, board_id=event.message.text)
                             if board:
                                 my_boards = crud.read_my_boards(database, user.username)
                                 new_my_board_ids = [my_board.board_id for my_board in my_boards]
-                                if event.message.text not in new_my_board_ids:
+                                if board.board_id not in new_my_board_ids:
                                     new_my_board_ids.append(board.board_id)
                                     user = crud.update_my_boards(database, user.username, schemas.NewMyBoards(new_my_board_ids=new_my_board_ids))
                                     if user:
