@@ -582,17 +582,18 @@ def handle_message_event(event: MessageEvent):
             user = crud.read_user(database, line_user_id=event.source.user_id)
             if user:
                 line_message_context = crud.read_line_message_context(database, user.line_user_uuid)
-                if line_message_context.message_context == "ボード設定":
-                    if event.message.text == "1":
-                        line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
-                        with open("./api/v1/assets/flex_messages/boards.json") as f:
-                            flex_message = json.load(f)
-                        for _ in range(len(user.boards) - 1):
-                            flex_message["body"]["contents"][1]["contents"].append(flex_message["body"]["contents"][1]["contents"][0])
-                        for i, board in enumerate(user.boards):
-                            flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = board.board_id
-                            flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = board.board_name
-                        line_bot_api.push_message(
-                            event.source.user_id,
-                            FlexSendMessage("入っているボード", flex_message)
-                        )
+                if line_message_context:
+                    if line_message_context.message_context == "ボード設定":
+                        if event.message.text == "1":
+                            # line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
+                            with open("./api/v1/assets/flex_messages/boards.json") as f:
+                                flex_message = json.load(f)
+                            for _ in range(len(user.boards) - 1):
+                                flex_message["body"]["contents"][1]["contents"].append(flex_message["body"]["contents"][1]["contents"][0])
+                            for i, board in enumerate(user.boards):
+                                flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = board.board_id
+                                flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = board.board_name
+                            line_bot_api.push_message(
+                                event.source.user_id,
+                                FlexSendMessage("入っているボード", flex_message)
+                            )
