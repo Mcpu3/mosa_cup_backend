@@ -112,13 +112,13 @@ def handle_follow_event(event: FollowEvent):
             if user:
                 line_bot_api.push_message(
                     event.source.user_id,
-                    f"{user.display_name if user.display_name else user.username}さんでサインインしました。"
+                    TextSendMessage(f"{user.display_name if user.display_name else user.username}さんでサインインしました。")
                 )
             else:
                 signup_url = f"https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signup?line_user_uuid={line_user.line_user_uuid}"
                 line_bot_api.push_message(
                     event.source.user_id,
-                    f"{signup_url} でサインアップします。"
+                    TextSendMessage(f"{signup_url} でサインアップします。")
                 )
 
 @api_router.post("/signup", tags=["users"])
