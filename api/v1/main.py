@@ -371,7 +371,7 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
         flex_message["body"]["contents"][0]["text"] = message.board.board_name
         flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = ", ".join([subboard.subboard_name for subboard in message.subboards])
         flex_message["body"]["contents"][1]["contents"][1]["contents"][0]["text"] = message.body
-        line_bot_api.multicast(line_user_ids, FlexSendMessage(contents=flex_message))
+        line_bot_api.multicast(line_user_ids, FlexSendMessage(message.body, flex_message))
 
 @api_router.delete("/board/{board_uuid}/message/{message_uuid}", tags=["messages"])
 def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -432,7 +432,7 @@ def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> 
             flex_message = json.load(f)
         flex_message["body"]["contents"][0]["text"] = direct_message.send_from.display_name if direct_message.send_from.display_name else direct_message.send_from.username
         flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = direct_message.body
-        line_bot_api.push_message(direct_message.send_to.line_user.user_id, FlexSendMessage(contents=flex_message))
+        line_bot_api.push_message(direct_message.send_to.line_user.user_id, FlexSendMessage(direct_message.body, flex_message))
 
 @api_router.delete("/direct_message/{direct_message_uuid}", tags=["direct_messages"])
 def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
