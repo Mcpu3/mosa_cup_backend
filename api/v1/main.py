@@ -592,12 +592,12 @@ def handle_message_event(event: MessageEvent):
                             line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
                             with open("./api/v1/assets/flex_messages/boards.json") as f:
                                 flex_message = json.load(f)
-                            if len(user.boards) > 0:
-                                for _ in range(len(user.boards) - 1):
+                            if len(user.my_boards) > 0:
+                                for _ in range(len(user.my_boards) - 1):
                                     flex_message["body"]["contents"][1]["contents"].append(copy.deepcopy(flex_message["body"]["contents"][1]["contents"][0]))
-                                for i, board in enumerate(user.boards):
-                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = board.board_id
-                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = board.board_name
+                                for i, my_board in enumerate(user.my_boards):
+                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = my_board.board_id
+                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = my_board.board_name
                             else:
                                 flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = "入っているボードはありません"
                                 flex_message["body"]["contents"][1]["contents"][0]["contents"][1]["text"] = "入っているボードはありません"
