@@ -24,6 +24,21 @@ class LINEUser(database.Model):
     updated_at = database.Column(database.DateTime, nullable=True)
     deleted = database.Column(database.Boolean, default=False, nullable=False)
 
+    message_context = database.relationship("LINEMessageContext", back_populates="line_user")
+
+
+class LINEMessageContext(database.Model):
+    __tablename__ = "LINEMessageContexts"
+
+    line_message_context_uuid = database.Column(database.String(48), primary_key=True)
+    message_context = database.Column(database.Unicode, nullable=True)
+    line_user_uuid = database.Column(database.String(48), database.ForeignKey("LINEUsers.line_user_uuid"), nullable=True)
+    created_at = database.Column(database.DateTime, nullable=False)
+    updated_at = database.Column(database.DateTime, nullable=True)
+    deleted = database.Column(database.Boolean, default=False, nullable=False)
+
+    line_user = database.relationship("LINEUser", back_populates="message_context")
+
 
 class User(database.Model):
     __tablename__ = "Users"

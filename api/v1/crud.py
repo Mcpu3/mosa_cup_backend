@@ -26,6 +26,35 @@ def create_line_user(database: Session, user_id: str) -> Optional[models.LINEUse
 
     return line_user
 
+def read_line_message_context(database: Session, line_user_uuid: str) -> Optional[models.LINEMessageContext]:
+    return database.query(models.LINEMessageContext).filter(and_(models.LINEMessageContext.line_user_uuid == line_user_uuid, models.LINEMessageContext.deleted == False)).first()
+
+def create_line_message_context(database: Session, line_user_uuid: str, message_context: str) -> Optional[models.LINEMessageContext]:
+    line_message_context_uuid = str(uuid4())
+    created_at = datetime.now()
+    line_message_context = models.LINEMessageContext(
+        line_message_context_uuid=line_message_context_uuid,
+        message_context=message_context,
+        line_user_uuid=line_user_uuid,
+        created_at=created_at
+    )
+    database.add(line_message_context)
+    database.commit()
+    database.refresh(line_message_context)
+
+    return line_message_context
+
+def update_line_message_context(database: Session, line_user_uuid: str, message_context: str) -> Optional[models.LINEMessageContext]:
+    line_message_context = read_line_message_context(database, line_user_uuid)
+    if line_message_context:
+        updated_at = datetime.now()
+        line_message_context.message_context = message_context
+        line_message_context.updated_at = updated_at
+        database.commit()
+        database.refresh(line_message_context)
+
+    return line_message_context
+
 def read_user(database: Session, user_uuid: Optional[str]=None, user_id: Optional[str]=None, username: Optional[str]=None, line_user_id: Optional[str]=None) -> Optional[models.User]:
     user = None
     if user_uuid:

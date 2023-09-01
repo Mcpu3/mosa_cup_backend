@@ -13,6 +13,21 @@ class LINEUser(Base):
     updated_at = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False, nullable=False)
 
+    message_context = relationship("LINEMessageContext", back_populates="line_user")
+
+
+class LINEMessageContext(Base):
+    __tablename__ = "LINEMessageContexts"
+
+    line_message_context_uuid = Column(String(48), primary_key=True)
+    message_context = Column(Unicode, nullable=True)
+    line_user_uuid = Column(String(48), ForeignKey("LINEUsers.line_user_uuid"), nullable=True)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False, nullable=False)
+
+    line_user = relationship("LINEUser", back_populates="message_context")
+
 
 class User(Base):
     __tablename__ = "Users"

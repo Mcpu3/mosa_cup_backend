@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+import json
 import os
 from typing import List, Tuple
 import urllib.parse
@@ -8,7 +9,7 @@ from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import FollowEvent, MessageAction, MessageEvent, RichMenu, RichMenuArea, RichMenuBounds, RichMenuSize, TextMessage, TextSendMessage
+from linebot.models import FlexSendMessage, FollowEvent, MessageAction, MessageEvent, RichMenu, RichMenuArea, RichMenuBounds, RichMenuSize, TextMessage, TextSendMessage
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -366,7 +367,12 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
     line_user_ids = list(set(line_user_ids))
 
     if line_user_ids:
-        line_bot_api.multicast(line_user_ids, TextSendMessage(message.body))
+        with open("./api/v1/assets/flex_messages/message.json") as f:
+            flex_message = json.load(f)
+        flex_message["body"]["contents"][0]["text"] = message.board.board_name
+        flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = ", ".join([subboard.subboard_name for subboard in message.subboards])
+        flex_message["body"]["contents"][1]["contents"][1]["contents"][0]["text"] = message.body
+        line_bot_api.multicast(line_user_ids, FlexSendMessage(message.body, flex_message))
 
 @api_router.delete("/board/{board_uuid}/message/{message_uuid}", tags=["messages"])
 def delete_message(board_uuid: str, message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -423,7 +429,11 @@ def post_direct_message(request: schemas.NewDirectMessage, _request: Request, cu
 
 def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> None:
     if direct_message.send_to.line_user:
-        line_bot_api.push_message(direct_message.send_to.line_user.user_id, TextSendMessage(direct_message.body))
+        with open("./api/v1/assets/flex_messages/direct_message.json") as f:
+            flex_message = json.load(f)
+        flex_message["body"]["contents"][0]["text"] = direct_message.send_from.display_name if direct_message.send_from.display_name else direct_message.send_from.username
+        flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = direct_message.body
+        line_bot_api.push_message(direct_message.send_to.line_user.user_id, FlexSendMessage(direct_message.body, flex_message))
 
 @api_router.delete("/direct_message/{direct_message_uuid}", tags=["direct_messages"])
 def delete_direct_message(direct_message_uuid: str, current_user: models.User=Depends(_get_current_user), database: Session=Depends(_get_database)):
@@ -538,49 +548,52 @@ def post_my_form_response(board_uuid: str, form_uuid: str, request: schemas.NewM
 
 @web_hook_handler.add(MessageEvent, message=TextMessage)
 def handle_message_event(event: MessageEvent):
-    received_message = event.message.text
-    if received_message == "サインイン":
-        signin_url = "https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/login"
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(f"{signin_url} からサインインしてね!")
-        )
-    elif received_message == "ロール変更":
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text='手順に従って変更を行ってください')
-        )
-    elif received_message == "ボード一覧":
-        message = ""
-        with _get_database_with_contextmanager() as database:
-            user = crud.read_user(database, user_uuid="91c3243d-8708-4a46-86ef-ada6f1d7e522")
-            my_boards = crud.read_my_boards(database, user.user_uuid)
-            for my_board in my_boards:
-                message += f"ボードID: {my_board.board_id}, ボード名: {my_board.board_name}\n"
-            line_bot_api.reply_message(
-                event.reply_token,
-                TextSendMessage(text=message)
-            )
-    elif received_message == "DM":
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text='DMはこちらから送信してください')
-        )
-    elif event.message.text.startswith("ボードに入る"):
-        new_my_board_uuid = event.message.text.split()[1]
-        with _get_database_with_contextmanager() as database:
-            user = crud.read_user(line_user_id=event.source.user_id)
+    with _get_database_with_contextmanager() as database:
+        if event.message.text == "サインアップ":
+            line_user = crud.read_line_user(database, event.source.user_id)
+            if not line_user:
+                line_user = crud.create_line_user(database, event.source.user_id)
+            if line_user:
+                user = crud.read_user(database, line_user_id=event.source.user_id)
+                if user:
+                    line_bot_api.push_message(
+                        event.source.user_id,
+                        TextSendMessage(f"{user.display_name if user.display_name else user.username}さんでサインインしました。")
+                    )
+                else:
+                    signup_url = f"https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/signup?line_user_uuid={line_user.line_user_uuid}"
+                    line_bot_api.push_message(
+                        event.source.user_id,
+                        TextSendMessage(f"{signup_url} でサインアップします。")
+                    )
+        elif event.message.text == "ボード設定":
+            user = crud.read_user(database, line_user_id=event.source.user_id)
             if user:
-                my_boards = crud.read_my_boards(database, user.user_uuid)
-                new_my_board_ids = [my_board.board_id for my_board in my_boards]
-                new_my_board_ids.append(new_my_board_uuid)
-                new_my_boards = schemas.NewMyBoards(
-                    new_my_board_ids=new_my_board_ids
-                )
-                user = crud.update_my_boards(database, user.user_uuid, new_my_boards)
-    else:
-        #ボード参加かもしれないから、crudでボード検索して合致したらurl、それ以外はこれって感じがいいかも
-        line_bot_api.reply_message(
-            event.reply_token,
-            TextSendMessage(text='操作はメニューから行ってください')
-        )
+                line_message_context = crud.read_line_message_context(database, user.line_user_uuid)
+                if not line_message_context:
+                    line_message_context = crud.create_line_message_context(database, user.line_user_uuid, "ボード設定")
+                else:
+                    line_message_context = crud.update_line_message_context(database, user.line_user_uuid, "ボード設定")
+                if line_message_context:
+                    line_bot_api.push_message(
+                        event.source.user_id,
+                        TextSendMessage("1: 入っているボードを表示する\n2: ボードに入る/ボードから出る")
+                    )
+        else:
+            user = crud.read_user(database, line_user_id=event.source.user_id)
+            if user:
+                line_message_context = crud.read_line_message_context(database, user.line_user_uuid)
+                if line_message_context.message_context == "ボード設定":
+                    if event.message.text == "1":
+                        line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
+                        with open("./api/v1/assets/flex_messages/boards.json") as f:
+                            flex_message = json.load(f)
+                        for _ in range(len(user.boards) - 1):
+                            flex_message["body"]["contents"][1]["contents"].append(flex_message["body"]["contents"][1]["contents"][0])
+                        for i, board in enumerate(user.boards):
+                            flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = board.board_id
+                            flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = board.board_name
+                        line_bot_api.push_message(
+                            event.source.user_id,
+                            FlexSendMessage("入っているボード", flex_message)
+                        )
