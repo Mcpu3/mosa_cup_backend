@@ -366,7 +366,7 @@ def post_message_from_line_bot(message: schemas.Message) -> None:
     line_user_ids = list(set(line_user_ids))
 
     if line_user_ids:
-        with open("./assets/flex_messages/message.json") as f:
+        with open("./api/v1/assets/flex_messages/message.json") as f:
             flex_message = json.load(f)
         flex_message["body"]["contents"][0]["text"] = message.board.board_name
         flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = ", ".join([subboard.subboard_name for subboard in message.subboards])
@@ -428,7 +428,7 @@ def post_direct_message(request: schemas.NewDirectMessage, _request: Request, cu
 
 def post_direct_message_from_line_bot(direct_message: schemas.DirectMessage) -> None:
     if direct_message.send_to.line_user:
-        with open("./assets/flex_messages/direct_message.json") as f:
+        with open("./api/v1/assets/flex_messages/direct_message.json") as f:
             flex_message = json.load(f)
         flex_message["body"]["contents"][0]["text"] = direct_message.send_from.display_name if direct_message.send_from.display_name else direct_message.send_from.username
         flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = direct_message.body
