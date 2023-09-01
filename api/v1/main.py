@@ -611,7 +611,7 @@ def handle_message_event(event: MessageEvent):
                             line_message_context = crud.update_line_message_context(database, user.line_user_uuid, "ボードに入る/ボードから出る")
                             if line_message_context:
                                 line_bot_api.push_message(
-                                    event.sourcec.user_id,
+                                    event.source.user_id,
                                     TextSendMessage("ボードID:")
                                 )
                     if line_message_context.message_context == "ボードに入る/ボードから出る":
