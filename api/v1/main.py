@@ -67,7 +67,7 @@ def init_line_bot_api() -> Tuple[LineBotApi, WebhookHandler]:
             areas=[
                 RichMenuArea(
                     bounds=RichMenuBounds(x=0, y=0, width=1250, height=843),
-                    action=MessageAction(label="サインイン", text="サインイン")
+                    action=MessageAction(label="サインアップ", text="サインアップ")
                 ),
                 RichMenuArea(
                     bounds=RichMenuBounds(x=0, y=843, width=1250, height=843),
