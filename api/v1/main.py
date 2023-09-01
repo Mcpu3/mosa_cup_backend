@@ -659,5 +659,5 @@ def handle_message_event(event: MessageEvent):
                                     update_my_subboards_url = f"https://orange-sand-0f913e000.3.azurestaticapps.net/paticipant/boardregistration/{board.board_uuid}"
                                     line_bot_api.push_message(
                                         event.source.user_id,
-                                        TextSendMessage(f'ボード "{update_my_subboards_url}" でサブボードに入る/サブボードから出ることができます。')
+                                        TextSendMessage(f'{update_my_subboards_url} でサブボードに入る/サブボードから出ることができます。')
                                     )
