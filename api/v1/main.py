@@ -591,18 +591,49 @@ def handle_message_event(event: MessageEvent):
                     if line_message_context.message_context == "ボード設定":
                         if event.message.text == "1":
                             line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
-                            with open("./api/v1/assets/flex_messages/boards.json") as f:
-                                flex_message = json.load(f)
-                            if len(user.my_boards) > 0:
-                                for _ in range(len(user.my_boards) - 1):
-                                    flex_message["body"]["contents"][1]["contents"].append(copy.deepcopy(flex_message["body"]["contents"][1]["contents"][0]))
-                                for i, my_board in enumerate(user.my_boards):
-                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = my_board.board_id
-                                    flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = my_board.board_name
-                            else:
-                                flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = "入っているボードはありません"
-                                flex_message["body"]["contents"][1]["contents"][0]["contents"][1]["text"] = "入っているボードはありません"
-                            line_bot_api.push_message(
-                                event.source.user_id,
-                                FlexSendMessage("入っているボード", flex_message)
-                            )
+                            if line_message_context:
+                                with open("./api/v1/assets/flex_messages/boards.json") as f:
+                                    flex_message = json.load(f)
+                                if len(user.my_boards) > 0:
+                                    for _ in range(len(user.my_boards) - 1):
+                                        flex_message["body"]["contents"][1]["contents"].append(copy.deepcopy(flex_message["body"]["contents"][1]["contents"][0]))
+                                    for i, my_board in enumerate(user.my_boards):
+                                        flex_message["body"]["contents"][1]["contents"][i]["contents"][0]["text"] = my_board.board_id
+                                        flex_message["body"]["contents"][1]["contents"][i]["contents"][1]["text"] = my_board.board_name
+                                else:
+                                    flex_message["body"]["contents"][1]["contents"][0]["contents"][0]["text"] = "入っているボードはありません"
+                                    flex_message["body"]["contents"][1]["contents"][0]["contents"][1]["text"] = "入っているボードはありません"
+                                line_bot_api.push_message(
+                                    event.source.user_id,
+                                    FlexSendMessage("入っているボード", flex_message)
+                                )
+                        elif event.message.text == "2":
+                            line_message_context = crud.update_line_message_context(database, user.line_user_uuid, "ボードに入る/ボードから出る")
+                            if line_message_context:
+                                line_bot_api.push_message(
+                                    event.sourcec.user_id,
+                                    TextSendMessage("ボードID:")
+                                )
+                    if line_message_context.message_context == "ボードに入る/ボードから出る":
+                        line_message_context = crud.update_line_message_context(database, user.line_user_uuid, None)
+                        if line_message_context:
+                            board = crud.read_board(database, board_id=event.message.text)
+                            if board:
+                                my_boards = crud.read_my_boards(database, user.username)
+                                new_my_board_ids = [my_board.board_id for my_board in my_boards]
+                                if event.message.text not in new_my_board_ids:
+                                    new_my_board_ids.append(board.board_id)
+                                    user = crud.update_my_boards(database, user.username, schemas.NewMyBoards(new_my_board_ids=new_my_board_ids))
+                                    if user:
+                                        line_bot_api.push_message(
+                                            event.source.user_id,
+                                            TextSendMessage(f'ボード "{board.board_name}" に入りました')
+                                        )
+                                else:
+                                    new_my_board_ids.remove(board.board_id)
+                                    user = crud.update_my_boards(database, user.username, schemas.NewMyBoards(new_my_board_ids=new_my_board_ids))
+                                    if user:
+                                        line_bot_api.push_message(
+                                            event.source.user_id,
+                                            TextSendMessage(f'ボード "{board.board_name}" から出ました')
+                                        )
