@@ -1,0 +1,38 @@
+{
+    "type": "bubble",
+    "body": {
+        "type": "box",
+        "layout": "vertical",
+        "contents": [
+            {
+                "type": "text",
+                "text": "Brown Cafe",
+                "weight": "bold",
+                "size": "xl"
+            },
+            {
+                "type": "box",
+                "layout": "vertical",
+                "margin": "lg",
+                "spacing": "sm",
+                "contents": [
+                    {
+                        "type": "box",
+                        "layout": "baseline",
+                        "spacing": "sm",
+                        "contents": [
+                            {
+                                "type": "text",
+                                "text": "10:00 - 23:00",
+                                "wrap": true,
+                                "color": "#666666",
+                                "size": "sm",
+                                "flex": 5
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}
